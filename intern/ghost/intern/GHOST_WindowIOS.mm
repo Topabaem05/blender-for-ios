@@ -5,6 +5,7 @@
 #include "GHOST_WindowIOS.hh"
 
 #include "GHOST_ContextIOS.hh"
+#include "GHOST_IOSInput.hh"
 #include "GHOST_SystemIOS.hh"
 
 #include "GHOST_Debug.hh"
@@ -571,9 +572,9 @@ typedef struct UserInputEvent {
 
         tablet_data.Active = GHOST_kTabletModeStylus;
 
-        /* Map apple pessure Range to Blender range: 0.0 (not touching) to 1.0 (full pressure). */
-        tablet_data.Pressure = current_pencil_touch.force /
-                               current_pencil_touch.maximumPossibleForce;
+        /* Map Apple Pencil pressure to Blender's 0.0 to 1.0 range. */
+        tablet_data.Pressure = GHOST_IOS_normalizePressure(
+            current_pencil_touch.force, current_pencil_touch.maximumPossibleForce);
 
         CGFloat azimuthAngle = [current_pencil_touch azimuthAngleInView:window->getView()];
         CGFloat altitudeAngle = [current_pencil_touch altitudeAngle];
