@@ -718,12 +718,12 @@ if(PLATFORM_BUNDLED_LIBRARIES)
   unset(_library_paths)
 endif()
 
-# Same as `CFBundleIdentifier` in Info.plist.
-# IOS_FIXME: Change 'test' back to 'blenderfoundation' before release
-# set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.blenderfoundation.blender")
-
 if(WITH_APPLE_CROSSPLATFORM)
   if(APPLE_TARGET_IOS)
+    set(BLENDER_IOS_BUNDLE_IDENTIFIER "org.blenderfoundation.blender" CACHE STRING
+      "Bundle identifier for the Blender iOS application"
+    )
+    set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BLENDER_IOS_BUNDLE_IDENTIFIER}")
     set(CMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "2")
     set(CMAKE_XCODE_ATTRIBUTE_SUPPORTS_MACCATALYST NO)
     set(CMAKE_XCODE_ATTRIBUTE_SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD NO)

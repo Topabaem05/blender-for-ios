@@ -255,6 +255,8 @@ endif()
 option(WITH_BLENDER "Build blender (disable to build only Cycles stand-alone)." ON)
 mark_as_advanced(WITH_BLENDER)
 
+option(WITH_IOS_TESTLAB "Build the hosted XCTest bundle for Firebase Test Lab" OFF)
+
 if(WIN32)
   option(WITH_BLENDER_THUMBNAILER "\
 Build \"BlendThumb.dll\" helper for Windows explorer integration to support extracting \
@@ -2812,6 +2814,19 @@ add_subdirectory(tests)
 
 if(WITH_BLENDER)
   add_subdirectory(source/creator)
+endif()
+
+if(WITH_IOS_TESTLAB)
+  if(NOT WITH_APPLE_CROSSPLATFORM OR NOT APPLE_TARGET_IOS)
+    message(FATAL_ERROR "WITH_IOS_TESTLAB requires an iOS build")
+  endif()
+  if(CMAKE_VERSION VERSION_LESS 4.0.1)
+    message(FATAL_ERROR "WITH_IOS_TESTLAB requires CMake 4.0.1 or newer")
+  endif()
+  if(NOT TARGET blender)
+    message(FATAL_ERROR "WITH_IOS_TESTLAB requires WITH_BLENDER=ON")
+  endif()
+  add_subdirectory(tests/ios)
 endif()
 
 

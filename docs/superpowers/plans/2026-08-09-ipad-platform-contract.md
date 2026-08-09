@@ -1,5 +1,10 @@
 # iPad Platform Foundation Implementation Plan
 
+> **Status:** The platform target in this historical plan is superseded by
+> `docs/superpowers/plans/2026-08-09-ipad-firebase-xctest.md`, which changes the minimum device to
+> iPad (10th generation) and the deployment floor to iPadOS 16.6. The RED-GREEN record below is kept
+> unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Narrow the existing Blender iOS port to the approved iPadOS 18 target and introduce the first real TDD-protected input behavior: safe Apple Pencil pressure normalization.
