@@ -264,8 +264,9 @@ else()
       set(PLATFORM_CFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -Wno-declaration-after-statement -arch ${CMAKE_OSX_ARCHITECTURES}")
       set(PLATFORM_CXXFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -std=c++20 -stdlib=libc++ -arch ${CMAKE_OSX_ARCHITECTURES}")
       set(PLATFORM_LDFLAGS "-isysroot ${CMAKE_OSX_SYSROOT} ${APPLE_OS_MINVERSION_CFLAG} -arch ${CMAKE_OSX_ARCHITECTURES} -headerpad_max_install_names")
-      # Apple ARM64 target.
-      set(PLATFORM_BUILD_TARGET --build=aarch64-apple-darwin20.0.0)
+      # Let Autoconf detect the native build machine so Apple Silicon hosts still
+      # recognize the iOS SDK output as a cross-compilation target.
+      set(PLATFORM_BUILD_TARGET)
 
       set(DCMAKE_FIND_ROOT_PATH
         ${DCMAKE_FIND_ROOT_PATH}
@@ -419,13 +420,21 @@ else()
   set(BLENDER_CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG ${PLATFORM_CXXFLAGS}")
   set(BLENDER_CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG ${PLATFORM_CXXFLAGS}")
 
-  set(CONFIGURE_ENV
-    export MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
-    export MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
-    export CFLAGS=${PLATFORM_CFLAGS} &&
-    export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
-    export LDFLAGS=${PLATFORM_LDFLAGS}
-  )
+  if(WITH_APPLE_CROSSPLATFORM)
+    set(CONFIGURE_ENV
+      export CFLAGS=${PLATFORM_CFLAGS} &&
+      export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
+      export LDFLAGS=${PLATFORM_LDFLAGS}
+    )
+  else()
+    set(CONFIGURE_ENV
+      export MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      export MACOSX_SDK_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET} &&
+      export CFLAGS=${PLATFORM_CFLAGS} &&
+      export CXXFLAGS=${PLATFORM_CXXFLAGS} &&
+      export LDFLAGS=${PLATFORM_LDFLAGS}
+    )
+  endif()
   set(CONFIGURE_ENV_NO_PERL ${CONFIGURE_ENV})
   set(CONFIGURE_COMMAND ./configure ${PLATFORM_BUILD_TARGET})
   set(CONFIGURE_COMMAND_NO_TARGET ./configure)

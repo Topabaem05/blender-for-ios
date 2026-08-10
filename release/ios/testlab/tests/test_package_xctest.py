@@ -13,7 +13,7 @@ SCRIPT = Path(__file__).parents[1] / "package_xctest.py"
 def create_products(products_dir, *, minimum_os_version="16.6", device_family=None,
                     xctestrun_name="Blender_iphoneos16.6-arm64.xctestrun"):
     if device_family is None:
-        device_family = [2]
+        device_family = [1, 2]
 
     debug_dir = products_dir / "Debug-iphoneos"
     app_dir = debug_dir / "Blender.app"
@@ -259,13 +259,12 @@ class PackageXCTestTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(output_zip.exists())
 
-    def test_rejects_non_ipad_only_device_family(self):
-        """Break caught: packaging accepts an app that supports iPhone and iPad."""
+    def test_accepts_reordered_universal_device_family(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             products_dir = temp_path / "products"
             products_dir.mkdir()
-            create_products(products_dir, device_family=[1, 2])
+            create_products(products_dir, device_family=[2, 1])
             output_zip = temp_path / "Blender-xctest.zip"
 
             result = subprocess.run(
@@ -274,8 +273,38 @@ class PackageXCTestTests(unittest.TestCase):
                 text=True,
             )
 
-            self.assertNotEqual(result.returncode, 0)
-            self.assertFalse(output_zip.exists())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(output_zip.is_file())
+
+    def test_rejects_non_universal_device_families(self):
+        invalid_families = (
+            [],
+            [1],
+            [2],
+            [1, 1, 2],
+            [1, 2, 3],
+            ["1", 2],
+            [True, 2],
+        )
+        for device_family in invalid_families:
+            with (
+                self.subTest(device_family=device_family),
+                tempfile.TemporaryDirectory() as temp_dir,
+            ):
+                temp_path = Path(temp_dir)
+                products_dir = temp_path / "products"
+                products_dir.mkdir()
+                create_products(products_dir, device_family=device_family)
+                output_zip = temp_path / "Blender-xctest.zip"
+
+                result = subprocess.run(
+                    [sys.executable, str(SCRIPT), str(products_dir), str(output_zip)],
+                    capture_output=True,
+                    text=True,
+                )
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(output_zip.exists())
 
 
 if __name__ == "__main__":

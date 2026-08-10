@@ -28,8 +28,14 @@ def validate_products(products_dir):
         app_info = plistlib.load(plist_file)
     if app_info.get("MinimumOSVersion") != "16.6":
         raise ValueError("Blender.app MinimumOSVersion must be 16.6")
-    if app_info.get("UIDeviceFamily") != [2]:
-        raise ValueError("Blender.app UIDeviceFamily must be [2]")
+    device_family = app_info.get("UIDeviceFamily")
+    if (
+        not isinstance(device_family, list)
+        or len(device_family) != 2
+        or not all(type(value) is int for value in device_family)
+        or set(device_family) != {1, 2}
+    ):
+        raise ValueError("Blender.app UIDeviceFamily must contain integer values 1 and 2")
 
     test_bundle = debug_dir / "Blender.app" / "PlugIns" / "BlenderFTLTests.xctest"
     if not test_bundle.is_dir():

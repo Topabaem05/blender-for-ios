@@ -7,7 +7,7 @@ set(SQLITE_CONFIGURATION_ARGS "")
 
 if(WITH_APPLE_CROSSPLATFORM)
   # Building for non-local architecture.
-  set(CROSS_COMPILE_FLAGS "--host=arm")
+  set(CROSS_COMPILE_FLAGS "--host=aarch64-apple-darwin20.0.0")
 else()
   set(CROSS_COMPILE_FLAGS)
 endif()

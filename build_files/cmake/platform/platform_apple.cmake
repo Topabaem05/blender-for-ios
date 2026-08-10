@@ -338,19 +338,63 @@ if(WITH_FRIBIDI)
 endif()
 
 # Header dependency of required OpenImageIO.
-find_package(OpenEXR REQUIRED)
+if(WITH_APPLE_CROSSPLATFORM)
+  function(ios_import_dylib target library include_dir)
+    add_library(${target} SHARED IMPORTED)
+    set_target_properties(${target} PROPERTIES
+      IMPORTED_LOCATION "${library}"
+      INTERFACE_INCLUDE_DIRECTORIES "${include_dir}"
+    )
+  endfunction()
+
+  ios_import_dylib(Imath::Imath
+    "${LIBDIR}/imath/lib/libImath.dylib"
+    "${LIBDIR}/imath/include"
+  )
+  ios_import_dylib(OpenEXR::Iex
+    "${LIBDIR}/openexr/lib/libIex.dylib"
+    "${LIBDIR}/openexr/include"
+  )
+  ios_import_dylib(OpenEXR::IlmThread
+    "${LIBDIR}/openexr/lib/libIlmThread.dylib"
+    "${LIBDIR}/openexr/include"
+  )
+  ios_import_dylib(OpenEXR::OpenEXRCore
+    "${LIBDIR}/openexr/lib/libOpenEXRCore.dylib"
+    "${LIBDIR}/openexr/include"
+  )
+  ios_import_dylib(OpenEXR::OpenEXR
+    "${LIBDIR}/openexr/lib/libOpenEXR.dylib"
+    "${LIBDIR}/openexr/include"
+  )
+  set_target_properties(OpenEXR::IlmThread PROPERTIES
+    INTERFACE_LINK_LIBRARIES "OpenEXR::Iex"
+  )
+  set_target_properties(OpenEXR::OpenEXRCore PROPERTIES
+    INTERFACE_LINK_LIBRARIES "Imath::Imath"
+  )
+  set_target_properties(OpenEXR::OpenEXR PROPERTIES
+    INTERFACE_LINK_LIBRARIES
+      "Imath::Imath;OpenEXR::Iex;OpenEXR::IlmThread;OpenEXR::OpenEXRCore"
+  )
+else()
+  find_package(OpenEXR REQUIRED)
+endif()
 add_bundled_libraries(openexr/lib)
 add_bundled_libraries(imath/lib)
 
 if(WITH_CODEC_FFMPEG)
   set(FFMPEG_ROOT_DIR ${LIBDIR}/ffmpeg)
   set(FFMPEG_FIND_COMPONENTS
-    avcodec avdevice avfilter avformat avutil
+    avcodec avdevice avformat avutil
     mp3lame ogg opus swresample swscale
     theora theoradec theoraenc vorbis vorbisenc
     vorbisfile vpx x264)
-  # Frameworks required by libavfilter, using legacy macOS CGL
-  string(APPEND PLATFORM_LINKFLAGS " -framework CoreImage -framework OpenGL")
+  if(NOT WITH_APPLE_CROSSPLATFORM)
+    list(APPEND FFMPEG_FIND_COMPONENTS avfilter)
+    # Frameworks required by libavfilter, using legacy macOS CGL.
+    string(APPEND PLATFORM_LINKFLAGS " -framework CoreImage -framework OpenGL")
+  endif()
   if(EXISTS ${LIBDIR}/ffmpeg/lib/libaom.a)
     list(APPEND FFMPEG_FIND_COMPONENTS aom)
   endif()
@@ -434,7 +478,14 @@ set(TIFF_ROOT ${LIBDIR}/tiff)
 find_package(TIFF REQUIRED)
 
 set(fmt_ROOT ${LIBDIR}/fmt)
-find_package(fmt REQUIRED)
+if(WITH_APPLE_CROSSPLATFORM)
+  find_package(fmt REQUIRED CONFIG
+    PATHS "${fmt_ROOT}/lib/cmake/fmt"
+    NO_DEFAULT_PATH
+  )
+else()
+  find_package(fmt REQUIRED)
+endif()
 
 if(WITH_IMAGE_WEBP)
   set(WEBP_ROOT_DIR ${LIBDIR}/webp)
@@ -449,7 +500,26 @@ if(WITH_PUGIXML)
   find_package(PugiXML REQUIRED)
 endif()
 
-find_package(OpenImageIO REQUIRED)
+if(WITH_APPLE_CROSSPLATFORM)
+  ios_import_dylib(OpenImageIO::OpenImageIO_Util
+    "${LIBDIR}/openimageio/lib/libOpenImageIO_Util.dylib"
+    "${LIBDIR}/openimageio/include"
+  )
+  ios_import_dylib(OpenImageIO::OpenImageIO
+    "${LIBDIR}/openimageio/lib/libOpenImageIO.dylib"
+    "${LIBDIR}/openimageio/include"
+  )
+  set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
+    INTERFACE_LINK_LIBRARIES "OpenImageIO::OpenImageIO_Util"
+  )
+  add_executable(OpenImageIO::oiiotool IMPORTED)
+  set_target_properties(OpenImageIO::oiiotool PROPERTIES
+    IMPORTED_LOCATION "${CROSSCOMPILE_HOST_LIBDIR}/openimageio/bin/oiiotool"
+  )
+  set(OpenImageIO_LIBRARIES OpenImageIO::OpenImageIO)
+else()
+  find_package(OpenImageIO REQUIRED)
+endif()
 add_bundled_libraries(openimageio/lib)
 
 if(WITH_OPENCOLORIO)
@@ -724,7 +794,7 @@ if(WITH_APPLE_CROSSPLATFORM)
       "Bundle identifier for the Blender iOS application"
     )
     set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BLENDER_IOS_BUNDLE_IDENTIFIER}")
-    set(CMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "2")
+    set(CMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
     set(CMAKE_XCODE_ATTRIBUTE_SUPPORTS_MACCATALYST NO)
     set(CMAKE_XCODE_ATTRIBUTE_SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD NO)
 

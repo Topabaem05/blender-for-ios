@@ -1,0 +1,12 @@
+{
+  "contract": "iPhone full editor for the features enabled by the iOS build",
+  "features": [
+    {"id": "build", "status": "in_progress", "evidence": "iOS Xcode project generates with Python 3.13, NumPy, and iOS-only dependencies"},
+    {"id": "universal-device-family", "status": "completed", "evidence": "app and XCTest Xcode settings are 1,2; 11 package tests pass"},
+    {"id": "cold-launch", "status": "pending", "evidence": null},
+    {"id": "touch-edit", "status": "pending", "evidence": null},
+    {"id": "python", "status": "pending", "evidence": null},
+    {"id": "save-resume-reopen", "status": "pending", "evidence": null},
+    {"id": "primary-render", "status": "pending", "evidence": null}
+  ]
+}
