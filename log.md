@@ -31,3 +31,5 @@
 - Found 18 packaged `.blend` files that were Git LFS pointers, restored their payloads from upstream,
   and verified the physical launch log contains no unrecognized asset-format warnings.
 - Added a package regression that rejects Git LFS pointers inside `Blender.app`; all 12 tests pass.
+- GitHub rejected uploading the 18 inherited objects to a public fork, so `.lfsconfig` now routes
+  LFS downloads to the official Blender upstream store that supplied the verified payloads.

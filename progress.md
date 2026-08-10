@@ -35,5 +35,7 @@ The signed universal editor and physical-iPhone workflow are GREEN.
   Blender LFS store. The installed app starts with zero asset-format warnings.
 - RED then GREEN: package validation rejects Git LFS pointer text inside `Blender.app`; all 12
   packaging tests pass.
+- The public fork now resolves its inherited LFS payloads from the official Blender upstream object
+  store instead of the empty GitHub fork endpoint.
 
 Current loop: final regression, checkpoint push, and independent evaluation.

@@ -23,5 +23,6 @@
 - Placed the hosted XCTest bundle under the Blender app's PlugIns directory for Xcode test builds.
 - Made the physical viewport test wait for Blender's Python timer readiness before tapping.
 - Restored the packaged brush, node, and startup-template `.blend` payloads from Git LFS.
+- Routed this public fork's Git LFS downloads to the official Blender upstream object store.
 
 Verification updated: 2026-08-10 23:40 KST.

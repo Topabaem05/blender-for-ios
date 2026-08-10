@@ -14,6 +14,9 @@ operator handoff, not proof that a package or Firebase matrix has already been v
   repository default bundle identifier for a build you intend to sign and install.
 - A Firebase project with permission to run Test Lab and a current Google Cloud CLI.
 
+The repository's `.lfsconfig` fetches inherited payloads from the official Blender LFS endpoint,
+because public GitHub forks cannot upload new LFS objects.
+
 From the repository root, fetch and check the iOS dependency prerequisite before configuring:
 
 ```bash
