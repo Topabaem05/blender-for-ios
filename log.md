@@ -10,3 +10,24 @@
 - Reproduced and removed host-library leakage from OpenEXR, OpenImageIO, FFmpeg, and fmt discovery.
 - Reproduced the iPad-only package and Xcode settings, then made the exact universal family contract
   pass 11 packaging tests and generated Xcode build-setting checks.
+- Rebuilt the OpenImageIO 3.1.7, OpenEXR 3.4.3, Imath 3.2.2, OpenSSL 3.5.2, libffi 3.5.2, and
+  Alembic 1.8.3 iOS boundaries required by the final Blender link.
+- Removed host Python from the app install, fixed install-time NumPy signing, and excluded disabled
+  USD/OSL runtime dylibs so the packaged dependency graph closes without missing `@rpath` edges.
+- Signed the app and all 39 nested code objects with one development identity, installed it on the
+  connected iPhone, and observed a successful cold launch.
+- Ran physical-device smoke scripts for editor/Python/NumPy/save/Workbench render/UI screenshot,
+  process-restart reopen, and background/foreground state preservation.
+- Added an opt-in physical-device UI test target. Its first `build-for-testing` run exposed and fixed
+  the hosted XCTest output-directory mismatch.
+- Fixed the UI test's unsupported foreground-wait selector and forced its `.xctestrun` to install the
+  signed staging app instead of the incomplete raw Xcode product.
+- Confirmed Xcode strips quote characters from iOS launch expressions before Blender receives them.
+  Reverted an ineffective GHOST argv-copy attempt and replaced the test probe with a quote-free
+  expression.
+- Replaced a fixed startup delay with a Darwin readiness notification from Blender's first Python
+  timer tick. The physical tap then produced `selected=true` in the app report and a selected-Cube
+  screenshot.
+- Found 18 packaged `.blend` files that were Git LFS pointers, restored their payloads from upstream,
+  and verified the physical launch log contains no unrecognized asset-format warnings.
+- Added a package regression that rejects Git LFS pointers inside `Blender.app`; all 12 tests pass.

@@ -259,6 +259,30 @@ class PackageXCTestTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(output_zip.exists())
 
+    def test_rejects_git_lfs_pointer_in_app_bundle(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            products_dir = temp_path / "products"
+            products_dir.mkdir()
+            create_products(products_dir)
+            asset = products_dir / "Debug-iphoneos" / "Blender.app" / "Assets" / "startup.blend"
+            asset.parent.mkdir()
+            asset.write_text(
+                "version https://git-lfs.github.com/spec/v1\n"
+                "oid sha256:" + "0" * 64 + "\n"
+                "size 123\n"
+            )
+            output_zip = temp_path / "Blender-xctest.zip"
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), str(products_dir), str(output_zip)],
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output_zip.exists())
+
     def test_accepts_reordered_universal_device_family(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)

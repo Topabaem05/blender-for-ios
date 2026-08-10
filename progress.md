@@ -18,4 +18,22 @@ The official iOS Python 3.13 dependency build is GREEN.
 - RED then GREEN: package validation now requires the exact integer device-family set `{1, 2}`.
 - Xcode reports `TARGETED_DEVICE_FAMILY = 1,2` for both Blender and BlenderFTLTests.
 
-Current loop: compile and sign the universal Blender iOS application.
+The signed universal editor and physical-iPhone workflow are GREEN.
+
+- Rebuilt OpenImageIO/OpenEXR/Imath plus the OpenSSL, libffi, and Alembic ABI boundaries for iOS
+  arm64, then completed the Blender application link.
+- Installed a development-signed app with a closed `@rpath` dependency graph and 39 verified nested
+  signatures on the connected iPhone.
+- Cold launch remained alive, and the device smoke test completed `bpy` editing, NumPy execution,
+  `.blend` saving, a Workbench render, and a UI screenshot.
+- A new process reopened the saved file and preserved the edited cube coordinates.
+- The same process survived a real Settings-app background transition and produced a new screenshot
+  after returning to the foreground.
+- A physical-device XCUITest now waits for a Blender Python readiness notification, taps the 3D
+  viewport, and records `selected=true` for the Cube from inside the running app.
+- Restored 18 Git LFS-backed brush, node, and startup-template `.blend` payloads from the upstream
+  Blender LFS store. The installed app starts with zero asset-format warnings.
+- RED then GREEN: package validation rejects Git LFS pointer text inside `Blender.app`; all 12
+  packaging tests pass.
+
+Current loop: final regression, checkpoint push, and independent evaluation.

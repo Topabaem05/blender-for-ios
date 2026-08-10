@@ -4,6 +4,9 @@ import plistlib
 import zipfile
 
 
+GIT_LFS_POINTER_HEADER = b"version https://git-lfs.github.com/spec/v1"
+
+
 def validate_products(products_dir):
     debug_dir = products_dir / "Debug-iphoneos"
     if not debug_dir.is_dir():
@@ -21,7 +24,8 @@ def validate_products(products_dir):
     if root_entries != expected_entries:
         raise ValueError("Products root must contain only Debug-iphoneos and the device .xctestrun")
 
-    info_plist = debug_dir / "Blender.app" / "Info.plist"
+    app_dir = debug_dir / "Blender.app"
+    info_plist = app_dir / "Info.plist"
     if not info_plist.is_file():
         raise ValueError("missing Blender.app/Info.plist")
     with info_plist.open("rb") as plist_file:
@@ -36,6 +40,13 @@ def validate_products(products_dir):
         or set(device_family) != {1, 2}
     ):
         raise ValueError("Blender.app UIDeviceFamily must contain integer values 1 and 2")
+
+    for product_file in app_dir.rglob("*"):
+        if product_file.is_file():
+            with product_file.open("rb") as handle:
+                if handle.read(len(GIT_LFS_POINTER_HEADER)) == GIT_LFS_POINTER_HEADER:
+                    relative_path = product_file.relative_to(app_dir)
+                    raise ValueError(f"Blender.app contains Git LFS pointer: {relative_path}")
 
     test_bundle = debug_dir / "Blender.app" / "PlugIns" / "BlenderFTLTests.xctest"
     if not test_bundle.is_dir():

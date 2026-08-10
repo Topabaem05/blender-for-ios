@@ -9,3 +9,15 @@ For each port boundary:
 5. Update the contract evidence and create a checkpoint commit only while GREEN.
 
 No runtime workaround is accepted without a regression test or a reproducible device check.
+
+## Current status
+
+- Complete: universal iPhone+iPad target configuration, iOS dependency closure, final application
+  link, install-stage runtime closure, nested signing, and physical-iPhone installation.
+- Complete on the connected iPhone: cold launch, editor/Python/NumPy execution, `.blend` save,
+  Workbench render, process-restart reopen, and background/foreground state preservation.
+- Complete on the connected iPhone: readiness-synchronized XCUITest viewport tap followed by an
+  in-process `bpy` Cube selection assertion and visual screenshot verification.
+- Complete: all packaged brush, node, and startup-template LFS payloads are materialized; package
+  validation rejects pointer text and the physical launch log has zero asset-format warnings.
+- Pending outside the available hardware: physical-iPad regression before universal release support.

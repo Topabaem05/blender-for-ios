@@ -1,12 +1,13 @@
 {
   "contract": "iPhone full editor for the features enabled by the iOS build",
   "features": [
-    {"id": "build", "status": "in_progress", "evidence": "iOS Xcode project generates with Python 3.13, NumPy, and iOS-only dependencies"},
-    {"id": "universal-device-family", "status": "completed", "evidence": "app and XCTest Xcode settings are 1,2; 11 package tests pass"},
-    {"id": "cold-launch", "status": "pending", "evidence": null},
-    {"id": "touch-edit", "status": "pending", "evidence": null},
-    {"id": "python", "status": "pending", "evidence": null},
-    {"id": "save-resume-reopen", "status": "pending", "evidence": null},
-    {"id": "primary-render", "status": "pending", "evidence": null}
+    {"id": "build", "status": "completed", "evidence": "arm64 iOS app linked, packaged with a closed runtime graph, signed, installed, and launched on the connected iPhone"},
+    {"id": "universal-device-family", "status": "completed", "evidence": "app and XCTest Xcode settings are 1,2; 12 package tests pass"},
+    {"id": "cold-launch", "status": "completed", "evidence": "physical iPhone launch succeeded and the Blender process remained alive after 10 seconds"},
+    {"id": "touch-edit", "status": "completed", "evidence": "readiness-synchronized physical XCUITest tapped the viewport; the app report recorded selected=true and the screenshot shows the selected Cube"},
+    {"id": "python", "status": "completed", "evidence": "device smoke executed bpy and NumPy inside Blender 5.1.2"},
+    {"id": "save-resume-reopen", "status": "completed", "evidence": "device saved a 96 KB blend file, reopened it in a new process, and preserved state across background/foreground"},
+    {"id": "primary-render", "status": "completed", "evidence": "physical iPhone produced a 64x64 Workbench PNG"},
+    {"id": "runtime-assets", "status": "completed", "evidence": "18 brush, node, and startup-template LFS payloads are materialized; the physical launch log has zero asset-format warnings"}
   ]
 }
