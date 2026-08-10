@@ -59,7 +59,9 @@ if(WITH_APPLE_CROSSPLATFORM)
     else()
       if(CACHE_VAR_TYPE STREQUAL "BOOL")
         # Remove IPAD arg
-        if(NOT CACHE_VAR STREQUAL "APPLE_TARGET_DEVICE" AND NOT CACHE_VAR STREQUAL "WITH_CROSSCOMPILED_TOOLS")
+        if(NOT CACHE_VAR STREQUAL "APPLE_TARGET_DEVICE" AND
+           NOT CACHE_VAR STREQUAL "WITH_CROSSCOMPILED_TOOLS" AND
+           NOT CACHE_VAR STREQUAL "WITH_IOS_TESTLAB")
           set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}=${${CACHE_VAR}}")
         else()
           # Disable iPad for tools compilation
@@ -273,7 +275,9 @@ endif()
 if(WITH_USD)
   find_package(USD REQUIRED)
 endif()
-add_bundled_libraries(usd/lib)
+if(WITH_USD OR NOT WITH_APPLE_CROSSPLATFORM)
+  add_bundled_libraries(usd/lib)
+endif()
 
 if(WITH_MATERIALX)
   find_package(MaterialX)
@@ -349,23 +353,23 @@ if(WITH_APPLE_CROSSPLATFORM)
 
   ios_import_dylib(Imath::Imath
     "${LIBDIR}/imath/lib/libImath.dylib"
-    "${LIBDIR}/imath/include"
+    "${LIBDIR}/imath/include;${LIBDIR}/imath/include/Imath"
   )
   ios_import_dylib(OpenEXR::Iex
     "${LIBDIR}/openexr/lib/libIex.dylib"
-    "${LIBDIR}/openexr/include"
+    "${LIBDIR}/openexr/include;${LIBDIR}/openexr/include/OpenEXR"
   )
   ios_import_dylib(OpenEXR::IlmThread
     "${LIBDIR}/openexr/lib/libIlmThread.dylib"
-    "${LIBDIR}/openexr/include"
+    "${LIBDIR}/openexr/include;${LIBDIR}/openexr/include/OpenEXR"
   )
   ios_import_dylib(OpenEXR::OpenEXRCore
     "${LIBDIR}/openexr/lib/libOpenEXRCore.dylib"
-    "${LIBDIR}/openexr/include"
+    "${LIBDIR}/openexr/include;${LIBDIR}/openexr/include/OpenEXR"
   )
   ios_import_dylib(OpenEXR::OpenEXR
     "${LIBDIR}/openexr/lib/libOpenEXR.dylib"
-    "${LIBDIR}/openexr/include"
+    "${LIBDIR}/openexr/include;${LIBDIR}/openexr/include/OpenEXR"
   )
   set_target_properties(OpenEXR::IlmThread PROPERTIES
     INTERFACE_LINK_LIBRARIES "OpenEXR::Iex"
@@ -572,7 +576,9 @@ endif()
 if(WITH_CYCLES AND WITH_CYCLES_OSL)
   find_package(OSL 1.13.4 REQUIRED)
 endif()
-add_bundled_libraries(osl/lib)
+if((WITH_CYCLES AND WITH_CYCLES_OSL) OR NOT WITH_APPLE_CROSSPLATFORM)
+  add_bundled_libraries(osl/lib)
+endif()
 # OSL dependency
 add_bundled_libraries(openjph/lib)
 

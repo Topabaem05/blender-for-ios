@@ -1843,11 +1843,13 @@ elseif(APPLE)
       ${TARGETDIR_VER}/python/lib
     )
 
-    # Install Python executable.
-    install(
-      PROGRAMS ${PYTHON_EXECUTABLE}
-      DESTINATION ${TARGETDIR_VER}/python/bin
-    )
+    # The Python executable is a host tool during an Apple cross-platform build.
+    if(NOT WITH_APPLE_CROSSPLATFORM)
+      install(
+        PROGRAMS ${PYTHON_EXECUTABLE}
+        DESTINATION ${TARGETDIR_VER}/python/bin
+      )
+    endif()
 
     # Needed for `distutils/pip`.
     # Get the last part of the include dir, will be `python{version}{abiflag}`.
@@ -1894,7 +1896,7 @@ elseif(APPLE)
       # Ensure numpy so is signed
       install(CODE "
       ${EXTRACT_CODESIGN_IDENTITY_CMD}
-      file(GLOB_RECURSE _signing_libraries ${CMAKE_INSTALL_PREFIX}/${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages/numpy/*.so)
+      file(GLOB_RECURSE _signing_libraries \${CMAKE_INSTALL_PREFIX}/${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages/numpy/*.so)
       foreach(f \${_signing_libraries})
         message(\"Signing \${f} with signing identity: '\${EXTRACT_CODESIGN_IDENTITY}'\")
         execute_process(COMMAND codesign -s \"\${EXTRACT_CODESIGN_IDENTITY}\" --options runtime -f \${f})
