@@ -60,7 +60,7 @@ release/ios/testlab/build_xctest.sh \
 ```
 
 Inspect the archive before upload. Its root must contain only `Debug-iphoneos/` and exactly one
-`*_iphoneos16.6-arm64.xctestrun` file. The device products must include
+`*_iphoneos<SDK>-arm64.xctestrun` file for the selected Xcode SDK. The device products must include
 `Debug-iphoneos/Blender.app/PlugIns/BlenderFTLTests.xctest` with its Info.plist and executable:
 
 ```bash
