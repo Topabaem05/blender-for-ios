@@ -96,7 +96,15 @@ else()
 
     if(WITH_APPLE_CROSSPLATFORM)
       # Building for non-local architecture.
-      set(CROSS_COMPILE_FLAGS "--host=aarch64-apple-darwin20.0.0")
+      if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+        set(CROSS_COMPILE_FLAGS
+          "--host=aarch64-apple-ios${OSX_MIN_DEPLOYMENT_TARGET}-simulator"
+          "--build=arm64-apple-darwin")
+      else()
+        set(CROSS_COMPILE_FLAGS
+          "--host=aarch64-apple-ios${OSX_MIN_DEPLOYMENT_TARGET}"
+          "--build=arm64-apple-darwin")
+      endif()
 
       # Disabling extra functionality!
       set(CROSS_COMPILE_FUNC_CONFIGS
@@ -147,6 +155,10 @@ else()
       set(PYTHON_FUNC_CONFIGS ${PYTHON_FUNC_CONFIGS} && export PYTHON_DECIMAL_WITH_MACHINE=ansi64)
     endif()
     set(PYTHON_CONFIGURE_ENV ${CONFIGURE_ENV} && ${PYTHON_FUNC_CONFIGS})
+    if(WITH_APPLE_CROSSPLATFORM)
+      set(PYTHON_CONFIGURE_ENV ${PYTHON_CONFIGURE_ENV} &&
+        export PATH=${BUILD_DIR}/python/src/external_python/iOS/Resources/bin:$ENV{PATH})
+    endif()
   else()
     set(PYTHON_CONFIGURE_ENV ${CONFIGURE_ENV})
   endif()
@@ -156,8 +168,7 @@ else()
     set(PYTHON_CONFIGURE_EXTRA_ARGS
       ${PYTHON_CONFIGURE_EXTRA_ARGS}
       --with-force-crosscompile=yes
-      --with-static-libpython=yes
-      --disable-shared 
+      --enable-framework=${LIBDIR}/python
       MODULE_BUILDTYPE=static
       --disable-test-modules
       --enable-test-modules=no
@@ -194,6 +205,7 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
     # Use pkg-config for libraries that support it, and ensure that it used static libraries.
     export PKG_CONFIG=pkg-config\ --static
     export PKG_CONFIG_PATH=${PYTHON_CONFIGURE_PKG_CONFIG_PATH}
+    export PKG_CONFIG_LIBDIR=${PYTHON_CONFIGURE_PKG_CONFIG_PATH}
 
     # Use flags documented by ./configure for other libs.
     export BZIP2_CFLAGS=-I${LIBDIR}/bzip2/include
@@ -207,6 +219,9 @@ ${LIBDIR}/ssl/lib64/pkgconfig:${LIBDIR}/lzma/lib/pkgconfig:${LIBDIR}/zlib/share/
       set(PYTHON_PATCH ${PATCH_CMD} --verbose -p1 -d
         ${BUILD_DIR}/python/src/external_python <
         ${PATCH_DIR}/python_ios.diff
+        && ${PATCH_CMD} --verbose -p1 -d
+        ${BUILD_DIR}/python/src/external_python <
+        ${PATCH_DIR}/python_ios_framework.diff
       )
     endif()
     # Prevent linking against Homebrew's libmpdec if it exists.
@@ -297,11 +312,11 @@ else()
 endif()
 
 if(WITH_APPLE_CROSSPLATFORM)
-  # Copy sysconfigdata to darwin_arm64
+  # Copy target sysconfig data for native build tools used during cross compilation.
   ExternalProject_Add_Step(external_python after_install
     COMMAND ${CMAKE_COMMAND} -E copy
-    ${LIBDIR}/python/lib/python${PYTHON_SHORT_VERSION}/_sysconfigdata__darwin_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER}.py
-    ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/lib/python${PYTHON_SHORT_VERSION}/_sysconfigdata__darwin_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER}.py
+    ${LIBDIR}/python/lib/python${PYTHON_SHORT_VERSION}/_sysconfigdata__ios_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER}.py
+    ${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/lib/python${PYTHON_SHORT_VERSION}/_sysconfigdata__ios_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER}.py
     DEPENDEES install
   )
 endif()

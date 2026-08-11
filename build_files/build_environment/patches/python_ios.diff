@@ -394,14 +394,3 @@ index 019fb4a..1ec0592 100644
 
  # Examples
  *static*
---- a/Makefile.pre.in
-+++ b/Makefile.pre.in
-@@ -503,7 +503,10 @@ LIBRARY_OBJS=	\
- 		$(LIBRARY_OBJS_OMIT_FROZEN) \
- 		$(DEEPFREEZE_OBJS) \
- 		Modules/getpath.o \
--		Python/frozen.o
-+		Python/frozen.o \
-+		$(LIBMPDEC_OBJS) \
-+       $(LIBHACL_SHA2_OBJS) \
-+       $(LIBEXPAT_OBJS)

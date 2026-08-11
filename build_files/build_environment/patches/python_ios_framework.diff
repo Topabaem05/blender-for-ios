@@ -1,0 +1,8 @@
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -979,7 +979,7 @@ $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
+ 		-compatibility_version $(VERSION) \
+ 		-current_version $(VERSION) \
+-		-framework CoreFoundation $(LIBS);
++		-framework CoreFoundation $(LIBS) $(MODLIBS) $(SYSLIBS);
+ 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(PYTHONFRAMEWORKDIR)/Info.plist

@@ -223,9 +223,12 @@ else()
   set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/include/python${PYTHON_VERSION}")
   set(PYTHON_LIBPATH "${LIBDIR}/python/lib")
 
-  set(PYTHON_LIBRARIES
-    "${LIBDIR}/python/lib/libpython${PYTHON_VERSION}.a"
-  )
+  set(PYTHON_FRAMEWORK_DIR "${LIBDIR}/python/Python.framework")
+  set(PYTHON_LIBRARY "${PYTHON_FRAMEWORK_DIR}/Python")
+  set(PYTHON_LIBRARIES "${PYTHON_LIBRARY}")
+  list(APPEND CMAKE_BUILD_RPATH "${LIBDIR}/python")
+  list(APPEND CMAKE_INSTALL_RPATH "@loader_path/Frameworks")
+  install(DIRECTORY "${PYTHON_FRAMEWORK_DIR}" DESTINATION "./Blender.app/Frameworks")
 
   if(NOT EXISTS ${PYTHON_EXECUTABLE})
     message(

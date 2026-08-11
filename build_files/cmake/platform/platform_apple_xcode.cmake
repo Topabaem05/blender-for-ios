@@ -247,6 +247,9 @@ if(WITH_APPLE_CROSSPLATFORM)
   ## To enable cross-compiled programs, we set to NEVER to use host tools. e.g. Git, Perl
   # Note: This may possibly break some things if use of programs is inconsistent.
   set (CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+  set (CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+  set (CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+  set (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 
   # Some libraries also require macOS sdk root.
   # TOOD: Remove duplication

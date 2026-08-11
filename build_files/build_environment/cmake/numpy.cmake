@@ -26,7 +26,7 @@ else()
     set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/include/python${PYTHON_SHORT_VERSION}")
     set(NUMPY_CONF
     export PATH=${CMAKE_DEPS_CROSSCOMPILE_BUILDDIR}/deps_arm64/Release/python/bin:$ENV{PATH} &&
-    export _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__darwin_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER} &&
+    export _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__ios_arm64-${APPLE_SDK_CROSSPLATFORM_NAME_LOWER} &&
     export IPHONEOS_DEPLOYMENT_TARGET=${OSX_MIN_DEPLOYMENT_TARGET}
     )
     set(CROSS_COMPILE_COMMANDS
