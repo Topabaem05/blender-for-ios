@@ -47,5 +47,16 @@ The signed universal editor and physical-iPhone workflow are GREEN.
 - GREEN: GHOST now retains the original URL until `WM_file_read` balances access. After observer
   readiness, a Files-visible Documents URL opened the marked 97,004-byte fixture, kept autoexec off,
   and produced a 518,706-byte screenshot on the connected iPhone.
+- RED then GREEN: UIKit delivered Shift, Control, Option, and Command correctly, but XCTest's Enter
+  and Escape synthesis corrupted modal state and iOS omitted macOS-style Command keymaps. Native
+  Space confirmation plus the iOS keymap conversion made all five observable shortcuts pass.
+- RED: the supplied 141 MB scene aborted on iPad Simulator because Simulator Metal rejects linear
+  textures backed by a shared VBO.
+- GREEN: Simulator-only private VBO mirrors preserved host-visible uploads and rendered the scene.
+  The app opened 1 scene with 343 objects and 202 meshes, saved and reopened 141,304,004 bytes,
+  round-tripped OBJ/PLY/STL, produced an 871,219-byte screenshot, and remained alive.
+- GREEN after the Metal fix: 2/2 touch and Apple-keyboard UI tests and 10/10 input/pressure tests
+  passed. The FTL host's shader-cache assertion occurs only after XCTest forces process exit and is
+  also present in the pre-fix result.
 
-Current loop: third-party Files-provider permission and Apple keyboard shortcut regression tests.
+Current loop: third-party Files-provider permission and iOS Python/add-on/Extensions policy.

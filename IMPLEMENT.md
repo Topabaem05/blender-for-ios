@@ -24,6 +24,11 @@ No runtime workaround is accepted without a regression test or a reproducible de
   `.blend` fixture through `UIApplication` and GHOST with auto-execution disabled.
 - Complete: all packaged brush, node, and startup-template LFS payloads are materialized; package
   validation rejects pointer text and the physical launch log has zero asset-format warnings.
-- Pending: a third-party Files-provider permission regression, Apple keyboard shortcuts, iPad
-  Simulator UI, and the iOS scripting/add-on/Extensions policy.
+- Complete on iPad Simulator: 10 input/pressure tests, viewport touch, Apple keyboard shortcuts,
+  full-editor landscape UI, and the supplied 141 MB file open/save/reopen plus OBJ/PLY/STL
+  round-trips. The post-fix app remained alive with no Metal assertion.
+- Pending: a third-party Files-provider permission regression and the iOS
+  scripting/add-on/Extensions policy.
+- Known disabled feature: Cycles is not included in the current iOS build; files selecting it show
+  an unavailable-engine warning and fall back to the enabled Workbench path for QA.
 - Pending outside the available hardware: physical-iPad regression before universal release support.

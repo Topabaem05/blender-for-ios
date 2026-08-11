@@ -2120,6 +2120,29 @@ bool gpu::MTLTexture::init_internal(VertBuf *vbo)
                "individual pixel when stride length is exceeded. ");
   }
 
+  const size_t aligned_bytes_per_row = ceil_to_multiple_ul(bytes_per_row, align_requirement);
+  id<MTLBuffer> texture_buffer = source_buffer;
+
+#if TARGET_OS_SIMULATOR
+  /* Simulator linear textures require private backing storage. Keep the VBO host-visible and
+   * mirror only the buffer texture data so normal vertex uploads remain unchanged. */
+  if (source_buffer.storageMode != MTLStorageModePrivate) {
+    BLI_assert([source_buffer length] >= bytes_per_row);
+    backing_buffer_ = MTLContext::get_global_memory_manager()->allocate(aligned_bytes_per_row,
+                                                                        false);
+    BLI_assert(backing_buffer_ != nullptr);
+    texture_buffer = backing_buffer_->get_metal_buffer();
+    BLI_assert(texture_buffer != nil);
+
+    id<MTLBlitCommandEncoder> enc = mtl_ctx->main_command_buffer.ensure_begin_blit_encoder();
+    [enc copyFromBuffer:source_buffer
+           sourceOffset:0
+               toBuffer:texture_buffer
+      destinationOffset:0
+                   size:bytes_per_row];
+  }
+#endif
+
   /* Create texture descriptor. */
   BLI_assert(type_ == GPU_TEXTURE_BUFFER);
   texture_descriptor_ = [[MTLTextureDescriptor alloc] init];
@@ -2133,15 +2156,15 @@ bool gpu::MTLTexture::init_internal(VertBuf *vbo)
   texture_descriptor_.usage =
       MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite |
       MTLTextureUsagePixelFormatView; /* TODO(Metal): Optimize usage flags. */
-  texture_descriptor_.storageMode = [source_buffer storageMode];
+  texture_descriptor_.storageMode = [texture_buffer storageMode];
   texture_descriptor_.sampleCount = 1;
-  texture_descriptor_.cpuCacheMode = [source_buffer cpuCacheMode];
-  texture_descriptor_.hazardTrackingMode = [source_buffer hazardTrackingMode];
+  texture_descriptor_.cpuCacheMode = [texture_buffer cpuCacheMode];
+  texture_descriptor_.hazardTrackingMode = [texture_buffer hazardTrackingMode];
 
-  texture_ = [source_buffer
+  texture_ = [texture_buffer
       newTextureWithDescriptor:texture_descriptor_
                         offset:0
-                   bytesPerRow:ceil_to_multiple_ul(bytes_per_row, align_requirement)];
+                   bytesPerRow:aligned_bytes_per_row];
   aligned_w_ = bytes_per_row / bytes_per_pixel;
 
   BLI_assert(texture_);

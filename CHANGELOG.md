@@ -13,6 +13,8 @@
 - Added reusable physical-iPhone smoke, reopen, and lifecycle checks for Blender editor behavior.
 - Added an opt-in XCUITest target for physical viewport touch verification.
 - Added package validation that rejects unresolved Git LFS pointers inside `Blender.app`.
+- Added iPad Simulator regressions for viewport touch, Apple keyboard modifiers and shortcuts, and
+  the supplied 141 MB `.blend` document lifecycle.
 
 ### Fixed
 
@@ -32,5 +34,8 @@
 - Made the physical viewport test wait for Blender's Python timer readiness before tapping.
 - Restored the packaged brush, node, and startup-template `.blend` payloads from Git LFS.
 - Routed this public fork's Git LFS downloads to the official Blender upstream object store.
+- Enabled the macOS-style Command keymap conversion when Python reports the iOS platform.
+- Made Simulator VBO-backed Metal textures use private mirrored storage, as required by the
+  Simulator Metal runtime, without changing the physical-device path.
 
-Verification updated: 2026-08-11 12:44 KST.
+Verification updated: 2026-08-12 02:01 KST.

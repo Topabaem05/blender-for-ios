@@ -221,6 +221,11 @@ void MTLVertBuf::update_sub(uint start, uint len, const void *data)
   this->bind();
   BLI_assert(start + len <= alloc_size_);
 
+#if TARGET_OS_SIMULATOR
+  /* Simulator buffer textures use a private mirror, which must be rebuilt after partial writes. */
+  GPU_TEXTURE_FREE_SAFE(buffer_texture_);
+#endif
+
   /* Create temporary scratch buffer allocation for sub-range of data. */
   MTLTemporaryBuffer scratch_allocation =
       ctx->get_scratch_buffer_manager().scratch_buffer_allocate_range_aligned(len, 256);

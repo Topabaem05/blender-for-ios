@@ -1,5 +1,20 @@
 # Port Log
 
+## 2026-08-12
+
+- Verified five Apple keyboard paths on iPad Simulator: unmodified transform, Shift duplicate,
+  Option clear location, Command undo, and Control full-screen toggle.
+- Reproduced a Simulator-only `MTLSimBuffer` assertion while drawing the supplied Blender 5.2
+  scene and traced it to the runtime requirement that linear textures use private storage.
+- Added a private mirror only for shared VBO buffer textures on Simulator and invalidated it after
+  partial VBO updates; the physical-device buffer path is unchanged.
+- Re-ran the 141 MB open/save/reopen and OBJ/PLY/STL lifecycle successfully, visually inspected the
+  full-editor landscape screenshot, and observed no post-fix crash or Metal assertion.
+- Re-ran 2/2 UI tests and 10/10 FTL tests. The shader-cache assertion after FTL completion is an
+  existing XCTest-host teardown artifact also present in the pre-fix result.
+- Recorded that Cycles is not included in this iOS build; the supplied scene displays the expected
+  unavailable-engine warning while Workbench remains functional.
+
 ## 2026-08-11
 
 - Reproduced a physical-iPhone `SIGABRT` while saving the supplied Blender 5.2 file and traced it to
