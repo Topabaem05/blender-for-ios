@@ -254,6 +254,8 @@ class GHOST_SystemIOS : public GHOST_System {
    */
   GHOST_TSuccess handleWindowEvent(GHOST_TEventType eventType, GHOST_WindowIOS *window);
 
+  GHOST_TSuccess handleKeyboardModifierMask(uint8_t modifier_mask, GHOST_WindowIOS *window);
+
   /**
    * Handles the Cocoa event telling the application has become active (again)
    * \return Indication whether the event was handled.

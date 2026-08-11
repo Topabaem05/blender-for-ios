@@ -5,12 +5,14 @@
 #include "GHOST_SystemIOS.hh"
 
 #include "GHOST_ContextIOS.hh"
+#include "GHOST_IOSInput.hh"
 #include "GHOST_WindowIOS.hh"
 
 #include "GHOST_Debug.hh"
 #include "GHOST_EventButton.hh"
 #include "GHOST_EventCursor.hh"
 #include "GHOST_EventDragnDrop.hh"
+#include "GHOST_EventKey.hh"
 #include "GHOST_EventString.hh"
 #include "GHOST_WindowManager.hh"
 
@@ -604,9 +606,12 @@ GHOST_TSuccess GHOST_SystemIOS::setMouseCursorPosition(int32_t /*x*/, int32_t /*
   return GHOST_kSuccess;
 }
 
-GHOST_TSuccess GHOST_SystemIOS::getModifierKeys(GHOST_ModifierKeys & /*keys*/) const
+GHOST_TSuccess GHOST_SystemIOS::getModifierKeys(GHOST_ModifierKeys &keys) const
 {
-  /* iOS Passthrough. */
+  keys.set(GHOST_kModifierKeyLeftOS, modifier_mask_ & GHOST_IOS_MODIFIER_OS);
+  keys.set(GHOST_kModifierKeyLeftAlt, modifier_mask_ & GHOST_IOS_MODIFIER_ALT);
+  keys.set(GHOST_kModifierKeyLeftShift, modifier_mask_ & GHOST_IOS_MODIFIER_SHIFT);
+  keys.set(GHOST_kModifierKeyLeftControl, modifier_mask_ & GHOST_IOS_MODIFIER_CONTROL);
   return GHOST_kSuccess;
 }
 
@@ -639,6 +644,30 @@ GHOST_TSuccess GHOST_SystemIOS::handleApplicationBecomeActiveEvent()
 {
   modifier_mask_ = 0;
 
+  outside_loop_event_processed_ = true;
+  return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_SystemIOS::handleKeyboardModifierMask(const uint8_t modifier_mask,
+                                                           GHOST_WindowIOS *window)
+{
+  if (!validWindow(window)) {
+    return GHOST_kFailure;
+  }
+
+  GHOST_IOSModifierTransition transitions[4];
+  const int transition_count = GHOST_IOS_modifierTransitions(
+      uint8_t(modifier_mask_), modifier_mask, transitions);
+  for (int i = 0; i < transition_count; i++) {
+    pushEvent(std::make_unique<GHOST_EventKey>(getMilliSeconds(),
+                                               transitions[i].key_down ? GHOST_kEventKeyDown :
+                                                                         GHOST_kEventKeyUp,
+                                               window,
+                                               transitions[i].key,
+                                               false));
+  }
+
+  modifier_mask_ = modifier_mask;
   outside_loop_event_processed_ = true;
   return GHOST_kSuccess;
 }

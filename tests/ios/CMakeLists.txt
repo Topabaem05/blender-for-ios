@@ -12,7 +12,10 @@ target_sources(BlenderFTLTests PRIVATE
 )
 
 target_include_directories(BlenderFTLTests PRIVATE
+  ../../intern/ghost
   ../../intern/ghost/intern
+  ../../intern/guardedalloc
+  ../../source/blender/blenlib
 )
 
 set_target_properties(BlenderFTLTests PROPERTIES

@@ -293,6 +293,49 @@ typedef struct UserInputEvent {
 @end
 
 @implementation GHOSTUIWindow
+- (BOOL)canBecomeFirstResponder
+{
+  return YES;
+}
+
+static uint8_t ghostModifierMask(const UIKeyModifierFlags flags)
+{
+  uint8_t mask = 0;
+  if (flags & UIKeyModifierShift) {
+    mask |= GHOST_IOS_MODIFIER_SHIFT;
+  }
+  if (flags & UIKeyModifierControl) {
+    mask |= GHOST_IOS_MODIFIER_CONTROL;
+  }
+  if (flags & UIKeyModifierAlternate) {
+    mask |= GHOST_IOS_MODIFIER_ALT;
+  }
+  if (flags & UIKeyModifierCommand) {
+    mask |= GHOST_IOS_MODIFIER_OS;
+  }
+  return mask;
+}
+
+static uint8_t ghostModifierMaskForHIDUsage(const uint32_t usage)
+{
+  switch (usage) {
+    case 0xe0:
+    case 0xe4:
+      return GHOST_IOS_MODIFIER_CONTROL;
+    case 0xe1:
+    case 0xe5:
+      return GHOST_IOS_MODIFIER_SHIFT;
+    case 0xe2:
+    case 0xe6:
+      return GHOST_IOS_MODIFIER_ALT;
+    case 0xe3:
+    case 0xe7:
+      return GHOST_IOS_MODIFIER_OS;
+    default:
+      return 0;
+  }
+}
+
 - (void)setSystemAndWindowIOS:(GHOST_SystemIOS *)sys windowIOS:(GHOST_WindowIOS *)win
 {
   system = sys;
@@ -334,6 +377,78 @@ typedef struct UserInputEvent {
                                              selector:@selector(externalKeyboardChange:)
                                                  name:GCKeyboardDidDisconnectNotification
                                                object:nil];
+  }
+}
+
+- (BOOL)generateKeyboardPressEvent:(UIPress *)press eventType:(GHOST_TEventType)event_type
+{
+  if (press.key == nil) {
+    return NO;
+  }
+
+  const uint32_t usage = uint32_t(press.key.keyCode);
+  const GHOST_TKey key = GHOST_IOS_keyFromHIDUsage(usage);
+  if (key == GHOST_kKeyUnknown) {
+    return NO;
+  }
+
+  uint8_t modifier_mask = ghostModifierMask(press.key.modifierFlags);
+  const uint8_t pressed_modifier = ghostModifierMaskForHIDUsage(usage);
+  if (pressed_modifier) {
+    if (event_type == GHOST_kEventKeyDown) {
+      modifier_mask |= pressed_modifier;
+    }
+    else {
+      modifier_mask &= ~pressed_modifier;
+    }
+    return system->handleKeyboardModifierMask(modifier_mask, window) == GHOST_kSuccess;
+  }
+  if (system->handleKeyboardModifierMask(modifier_mask, window) != GHOST_kSuccess) {
+    return NO;
+  }
+
+  char utf8_buf[6] = {};
+  const char *utf8 = nullptr;
+  const bool printable = (usage >= 0x04 && usage <= 0x27) ||
+                         (usage >= 0x2c && usage <= 0x38) ||
+                         (usage >= 0x59 && usage <= 0x63);
+  if (event_type == GHOST_kEventKeyDown && printable &&
+      !(press.key.modifierFlags & UIKeyModifierCommand) &&
+      [press.key.characters getCString:utf8_buf
+                                 maxLength:sizeof(utf8_buf)
+                                  encoding:NSUTF8StringEncoding])
+  {
+    utf8 = utf8_buf;
+  }
+
+  system->pushEvent(std::make_unique<GHOST_EventKey>(
+      system->getMilliSeconds(), event_type, window, key, false, utf8));
+  return YES;
+}
+
+- (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event
+{
+  NSMutableSet<UIPress *> *unhandled = [NSMutableSet setWithSet:presses];
+  for (UIPress *press in presses) {
+    if ([self generateKeyboardPressEvent:press eventType:GHOST_kEventKeyDown]) {
+      [unhandled removeObject:press];
+    }
+  }
+  if (unhandled.count != 0) {
+    [super pressesBegan:unhandled withEvent:event];
+  }
+}
+
+- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event
+{
+  NSMutableSet<UIPress *> *unhandled = [NSMutableSet setWithSet:presses];
+  for (UIPress *press in presses) {
+    if ([self generateKeyboardPressEvent:press eventType:GHOST_kEventKeyUp]) {
+      [unhandled removeObject:press];
+    }
+  }
+  if (unhandled.count != 0) {
+    [super pressesEnded:unhandled withEvent:event];
   }
 }
 
@@ -1243,6 +1358,7 @@ typedef struct UserInputEvent {
 
       /* Shut down the keyboard. */
       [text_field resignFirstResponder];
+      [self becomeFirstResponder];
       /*
        IOS_FIXME - Note: This may cause the console to display the warning message:
        "-[UIApplication _touchesEvent] will no longer work as expected. Please stop using it."
@@ -1897,6 +2013,7 @@ bool GHOST_WindowIOS::makeKeyWindow()
 
   /* Make window primary visible window. */
   [rootWindow makeKeyAndVisible];
+  [(GHOSTUIWindow *)rootWindow becomeFirstResponder];
   /* Enable the drawInMTKView() calls for this window. */
   metal_view_.paused = NO;
 
