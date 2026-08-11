@@ -5,6 +5,12 @@
 
 @implementation BlenderUITests
 
+- (void)setUp
+{
+  [super setUp];
+  XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+}
+
 - (void)testViewportTapSelectsCube
 {
   XCUIApplication *app = [[XCUIApplication alloc] init];
@@ -110,12 +116,13 @@
   [app typeKey:@"g" modifierFlags:XCUIKeyModifierNone];
   [app typeKey:@"x" modifierFlags:XCUIKeyModifierNone];
   [app typeKey:@"1" modifierFlags:XCUIKeyModifierNone];
-  [app typeKey:XCUIKeyboardKeyEnter modifierFlags:XCUIKeyModifierNone];
+  /* XCTest misroutes Enter and drops Escape on iOS; Space is a native transform confirm key. */
+  [app typeKey:XCUIKeyboardKeySpace modifierFlags:XCUIKeyModifierNone];
   XCTAssertEqual([XCTWaiter waitForExpectations:@[ moved ] timeout:10.0],
                  XCTWaiterResultCompleted);
 
   [app typeKey:@"d" modifierFlags:XCUIKeyModifierShift];
-  [app typeKey:XCUIKeyboardKeyEscape modifierFlags:XCUIKeyModifierNone];
+  [app typeKey:XCUIKeyboardKeySpace modifierFlags:XCUIKeyModifierNone];
   XCTAssertEqual([XCTWaiter waitForExpectations:@[ shifted ] timeout:10.0],
                  XCTWaiterResultCompleted);
 

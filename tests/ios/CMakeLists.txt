@@ -26,6 +26,18 @@ set_target_properties(BlenderFTLTests PROPERTIES
   XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.6"
 )
 
+if(APPLE_TARGET_DEVICE STREQUAL "ios-simulator")
+  add_custom_command(TARGET BlenderFTLTests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}"
+      --config "$<CONFIG>"
+      --prefix "${EXECUTABLE_OUTPUT_PATH}/$<CONFIG>"
+    COMMAND /usr/bin/codesign --force --deep --sign - --timestamp=none
+      "$<TARGET_BUNDLE_DIR:blender>"
+    COMMENT "Installing the Blender runtime into the Simulator test host"
+    VERBATIM
+  )
+endif()
+
 # FindXCTest attaches hosted test bundles to the testee application's scheme.
 set_target_properties(blender PROPERTIES XCODE_GENERATE_SCHEME TRUE)
 
