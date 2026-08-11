@@ -27,6 +27,16 @@
   traceback, import, dyld, or resource-warning patterns.
 - Isolated existing UIKit scene-lifecycle and full-screen plist deprecation warnings as remaining
   platform work rather than changing them inside the Python packaging checkpoint.
+- Removed only reconstructable Blender build caches after the device build exhausted disk space;
+  preserved the completed Simulator app, QA evidence, and active device objects.
+- Reproduced a final device-link failure caused by forcing a missing `Python.framework`, added a RED
+  regression, and selected the available framework or static Python runtime at configure time.
+- Completed 27/27 testlab tests, both Simulator/device CMake branch checks, a successful device
+  build, and a signed staging package with 19 arm64 iPhoneOS extension frameworks.
+- Verified the staged app's 44 loadable Mach-O files, deep signature, provisioning match, reciprocal
+  loader markers, and 383/383 required Python symbols before touching the phone.
+- Kept the first failed install isolated to Xcode's unavailable-device state. The app was not
+  launched, the install was not repeated, and the phone was not rebooted or otherwise reset.
 
 ## 2026-08-11
 

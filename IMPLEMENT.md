@@ -30,8 +30,10 @@ No runtime workaround is accepted without a regression test or a reproducible de
 - Complete on iPad Simulator: Python 3.13.9, `bpy`, NumPy, and a bundled SVG add-on run after all 19
   NumPy native modules are converted to signed frameworks. Runtime Extension management exits with
   the documented iOS error instead of attempting a subprocess.
-- In progress: repeat the framework-packaged Python/NumPy/add-on regression in a freshly signed
-  physical-iPhone staging app. Raw Xcode products are not installed on hardware.
+- In progress: a fresh device build and signed staging app now contain 19 native-module frameworks,
+  pass package/signing validation, and export every Python symbol those modules require. The first
+  install attempt was stopped by Xcode reporting the paired iPhone unavailable; raw Xcode products
+  were not installed and no repeated install was attempted while the connection remained down.
 - Pending: a third-party Files-provider permission regression. Files-visible Blender Documents
   import and export are already complete.
 - Known disabled feature: Cycles is not included in the current iOS build; files selecting it show

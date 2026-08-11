@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).parents[1] / "frameworkize_python.py"
+PLATFORM_APPLE = Path(__file__).parents[4] / "build_files/cmake/platform/platform_apple.cmake"
 
 
 class FrameworkizePythonTests(unittest.TestCase):
@@ -73,6 +74,21 @@ class FrameworkizePythonTests(unittest.TestCase):
             self.assertEqual(info["CFBundlePackageType"], "FMWK")
             self.assertEqual(info["CFBundleSupportedPlatforms"], ["iPhoneOS"])
             self.assertEqual(info["MinimumOSVersion"], "16.6")
+
+
+class PlatformAppleTests(unittest.TestCase):
+    def test_selects_an_available_python_runtime_for_ios(self):
+        source = PLATFORM_APPLE.read_text()
+
+        self.assertIn('if(EXISTS "${PYTHON_FRAMEWORK_DIR}/Python")', source)
+        self.assertIn(
+            'elseif(EXISTS "${PYTHON_LIBPATH}/libpython${PYTHON_VERSION}.a")',
+            source,
+        )
+        self.assertIn(
+            'set(PYTHON_LIBRARY "${PYTHON_LIBPATH}/libpython${PYTHON_VERSION}.a")',
+            source,
+        )
 
 
 if __name__ == "__main__":

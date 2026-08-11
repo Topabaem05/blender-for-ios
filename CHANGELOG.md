@@ -46,5 +46,7 @@
   Python `.so` files left outside `Frameworks`.
 - Kept `sys.executable` anchored to the Blender app binary on iOS so CPython's
   `AppleFrameworkLoader` can resolve packaged native modules.
+- Selected `Python.framework` only when its binary exists and otherwise retained the available
+  static iOS Python library, with an early configure error when neither runtime is present.
 
-Verification updated: 2026-08-12 03:20 KST.
+Verification updated: 2026-08-12 04:56 KST.

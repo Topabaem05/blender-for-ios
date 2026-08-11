@@ -70,6 +70,19 @@ The signed universal editor and physical-iPhone workflow are GREEN.
   Simulator run imported NumPy, enabled the bundled add-on, exercised the Extension policy, wrote a
   2,091,108-byte Blender screenshot, and had zero traceback, import, dyld, or resource-warning log
   patterns.
+- RED: the device build reached its final link but the Apple platform configuration replaced the
+  discovered static Python archive with a `Python.framework` path that did not exist in the device
+  dependency overlay.
+- GREEN: availability-aware Python runtime selection keeps the Simulator framework path and uses the
+  device static archive when needed. All 27 testlab tests pass, both generated Xcode projects select
+  the intended input, and the device build exits successfully.
+- GREEN before device install: CMake staging converted 19 native modules with zero remaining Python
+  `.so` files; validator checked 44 loadable Mach-O files, deep signing and provisioning matched,
+  and all 383 Python symbols required by the extension frameworks are exported by the app.
+- External connection gate: one CoreDevice install attempt found the paired iPhone unavailable, and
+  an independent Xcode discovery refresh returned the same device-preparation state. No second
+  install or device reboot was attempted.
 
-Current loop: signed physical-iPhone framework regression, third-party Files-provider permission,
-and remaining platform gaps (Cycles, UIKit scene lifecycle, and physical-iPad coverage).
+Current loop: restore Xcode physical-device availability, run the signed framework regression,
+then cover third-party Files-provider permission and remaining platform gaps (Cycles, UIKit scene
+lifecycle, and physical-iPad coverage).
