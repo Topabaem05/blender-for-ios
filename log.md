@@ -8,6 +8,10 @@
 - Built and signed a runtime-closed arm64 app, installed it through CoreDevice, and observed the
   supplied 141 MB file open, save, reopen, OBJ/PLY/STL round-trip, and screenshot successfully.
 - Confirmed the Blender process remained alive and no new Blender crash report appeared.
+- Reproduced the asynchronous iOS document URL boundary and retained the original security-scoped
+  URL until Blender's existing `WM_file_read` start/stop calls complete.
+- Added a persistent, readiness-synchronized openURL test and observed a Files-visible Documents
+  fixture load with its marker intact, autoexec disabled, and the full editor visible.
 
 ## 2026-08-10
 

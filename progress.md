@@ -42,5 +42,10 @@ The signed universal editor and physical-iPhone workflow are GREEN.
 - GREEN: offscreen viewport drawing now restores a framebuffer only when its owning GPU context is
   still active. A freshly built and signed app opened the 141,369,967-byte input, saved and reopened
   141,884,312 bytes, round-tripped OBJ/PLY/STL, and remained alive with no new crash report.
+- RED: the iOS document callback converted its security-scoped `NSURL` to a path before queuing the
+  asynchronous GHOST file-open event, so the later scope request used a different URL object.
+- GREEN: GHOST now retains the original URL until `WM_file_read` balances access. After observer
+  readiness, a Files-visible Documents URL opened the marked 97,004-byte fixture, kept autoexec off,
+  and produced a 518,706-byte screenshot on the connected iPhone.
 
-Current loop: Files-provider open-in-place and Apple keyboard shortcut regression tests.
+Current loop: third-party Files-provider permission and Apple keyboard shortcut regression tests.

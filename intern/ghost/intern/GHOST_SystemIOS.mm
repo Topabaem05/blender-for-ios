@@ -33,6 +33,8 @@
 
 int argc = 0;
 const char **argv = nullptr;
+static NSMutableDictionary<NSString *, NSURL *> *g_open_document_urls = nil;
+static NSMutableSet<NSString *> *g_active_security_scoped_paths = nil;
 
 namespace blender {
 struct bContext;
@@ -66,9 +68,7 @@ int main_ios_callback(int argc, const char **argv);
 {
   GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
 
-  system->handleOpenDocumentRequest(url.path);
-
-  return YES;
+  return system != nullptr && system->handleOpenDocumentRequest(url);
 }
 
 @end
@@ -759,16 +759,35 @@ const char *GHOST_SystemIOS::getKeyboardInput(GHOST_IWindow *window)
 
 GHOST_TSuccess GHOST_SystemIOS::startSecurityScopedFileAccess(const char *filepath)
 {
-  NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
+  NSString *path = [NSString stringWithUTF8String:filepath];
+  if (path == nil) {
+    return GHOST_kFailure;
+  }
+
+  NSURL *url = g_open_document_urls[path];
+  if (url == nil) {
+    url = [NSURL fileURLWithPath:path];
+  }
   BOOL success = [url startAccessingSecurityScopedResource];
+  if (success && g_open_document_urls[path] != nil) {
+    [g_active_security_scoped_paths addObject:path];
+  }
 
   return success ? GHOST_kSuccess : GHOST_kFailure;
 }
 
 GHOST_TSuccess GHOST_SystemIOS::stopSecurityScopedFileAccess(const char *filepath)
 {
-  NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filepath]];
-  [url stopAccessingSecurityScopedResource];
+  NSString *path = [NSString stringWithUTF8String:filepath];
+  if (path == nil) {
+    return GHOST_kFailure;
+  }
+
+  if ([g_active_security_scoped_paths containsObject:path]) {
+    [g_open_document_urls[path] stopAccessingSecurityScopedResource];
+    [g_active_security_scoped_paths removeObject:path];
+  }
+  [g_open_document_urls removeObjectForKey:path];
 
   return GHOST_kSuccess;
 }
@@ -899,10 +918,10 @@ void GHOST_SystemIOS::handleQuitRequest()
 
 bool GHOST_SystemIOS::handleOpenDocumentRequest(void *filepathStr)
 {
-  NSString *filepath = (NSString *)filepathStr;
+  NSURL *url = (NSURL *)filepathStr;
 
   @autoreleasepool {
-    if (!current_active_window_) {
+    if (![url isKindOfClass:[NSURL class]] || !url.isFileURL || !current_active_window_) {
       return NO;
     }
 
@@ -911,6 +930,17 @@ bool GHOST_SystemIOS::handleOpenDocumentRequest(void *filepathStr)
     if (current_active_window_->getCursorGrabModeIsWarp()) {
       return NO;
     }
+
+    NSString *filepath = url.path;
+    if (filepath.length == 0) {
+      return NO;
+    }
+
+    if (g_open_document_urls == nil) {
+      g_open_document_urls = [[NSMutableDictionary alloc] init];
+      g_active_security_scoped_paths = [[NSMutableSet alloc] init];
+    }
+    g_open_document_urls[filepath] = url;
 
     const size_t filenameTextSize = [filepath lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
     char *temp_buff = (char *)malloc(filenameTextSize + 1);

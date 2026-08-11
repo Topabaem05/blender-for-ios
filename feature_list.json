@@ -8,7 +8,7 @@
     {"id": "python", "status": "completed", "evidence": "device smoke executed bpy and NumPy inside Blender 5.1.2"},
     {"id": "save-resume-reopen", "status": "completed", "evidence": "device saved a 96 KB blend file, reopened it in a new process, and preserved state across background/foreground"},
     {"id": "documents-io", "status": "completed", "evidence": "physical iPhone opened the supplied 141 MB Blender 5.2 file with autoexec disabled, saved and reopened 141884312 bytes, and round-tripped OBJ, PLY, and STL"},
-    {"id": "files-open-in-place", "status": "pending", "evidence": "security-scoped Files-provider URL flow still requires a physical-device test"},
+    {"id": "files-open-in-place", "status": "in_progress", "evidence": "physical iPhone opened a Files-visible Blender Documents URL with autoexec disabled; the original NSURL now survives until balanced scope release, while a third-party provider permission test remains"},
     {"id": "apple-keyboard", "status": "pending", "evidence": "UIKit key and modifier delivery plus observable Blender shortcut tests remain"},
     {"id": "ipad-simulator", "status": "pending", "evidence": "simulator dependency closure, full-editor layout, and core smoke checks remain"},
     {"id": "python-extensions-policy", "status": "pending", "evidence": "iOS platform detection, executable-code policy, tests, and user-facing documentation remain"},
