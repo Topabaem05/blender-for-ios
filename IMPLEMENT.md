@@ -27,8 +27,15 @@ No runtime workaround is accepted without a regression test or a reproducible de
 - Complete on iPad Simulator: 10 input/pressure tests, viewport touch, Apple keyboard shortcuts,
   full-editor landscape UI, and the supplied 141 MB file open/save/reopen plus OBJ/PLY/STL
   round-trips. The post-fix app remained alive with no Metal assertion.
-- Pending: a third-party Files-provider permission regression and the iOS
-  scripting/add-on/Extensions policy.
+- Complete on iPad Simulator: Python 3.13.9, `bpy`, NumPy, and a bundled SVG add-on run after all 19
+  NumPy native modules are converted to signed frameworks. Runtime Extension management exits with
+  the documented iOS error instead of attempting a subprocess.
+- In progress: repeat the framework-packaged Python/NumPy/add-on regression in a freshly signed
+  physical-iPhone staging app. Raw Xcode products are not installed on hardware.
+- Pending: a third-party Files-provider permission regression. Files-visible Blender Documents
+  import and export are already complete.
 - Known disabled feature: Cycles is not included in the current iOS build; files selecting it show
   an unavailable-engine warning and fall back to the enabled Workbench path for QA.
+- Known platform debt: UIKit reports that scene lifecycle adoption will become mandatory and that
+  the current full-screen plist key will be ignored in a future iOS release.
 - Pending outside the available hardware: physical-iPad regression before universal release support.

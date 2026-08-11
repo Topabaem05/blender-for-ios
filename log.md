@@ -14,6 +14,19 @@
   existing XCTest-host teardown artifact also present in the pre-fix result.
 - Recorded that Cycles is not included in this iOS build; the supplied scene displays the expected
   unavailable-engine warning while Workbench remains functional.
+- Reproduced the iOS Extension manager entering a subprocess-only path and added a shared iOS guard
+  that leaves bundled add-ons and user scripts available.
+- Added TDD coverage for CPython iOS framework redirects and package rejection of loadable Python
+  `.so` files outside `Frameworks`.
+- Converted 19 NumPy native modules to signed frameworks, verified `.fwork` and `.origin` counts,
+  deep code signing, and 74 loadable Mach-O files.
+- Traced a Simulator NumPy import failure to Blender setting `sys.executable` to `None`; on iOS it
+  now points to the already initialized Blender app binary used by `AppleFrameworkLoader`.
+- Completed a clean fresh-run Simulator QA for Python 3.13.9, NumPy, the bundled SVG add-on, the
+  runtime Extension policy, and a Blender-rendered screenshot. The app remained alive with no
+  traceback, import, dyld, or resource-warning patterns.
+- Isolated existing UIKit scene-lifecycle and full-screen plist deprecation warnings as remaining
+  platform work rather than changing them inside the Python packaging checkpoint.
 
 ## 2026-08-11
 

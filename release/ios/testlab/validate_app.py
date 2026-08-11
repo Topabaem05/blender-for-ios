@@ -114,6 +114,8 @@ def validate_runtime(app_dir, command_runner=run_command, *, allow_xctest_suppor
         relative_owner = owner.relative_to(app_dir)
         if allow_xctest_support and is_xctest_support(relative_owner):
             continue
+        if owner.suffix == ".so" and relative_owner.parts[0] != "Frameworks":
+            errors.append(f"Python extension outside Frameworks: {relative_owner}")
         owner_rpaths = rpaths(command_runner(["otool", "-l", str(owner)]))
         for dependency in dependencies(command_runner(["otool", "-L", str(owner)])):
             if dependency.startswith(SYSTEM_DEPENDENCY_PREFIXES):

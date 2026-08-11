@@ -58,5 +58,18 @@ The signed universal editor and physical-iPhone workflow are GREEN.
 - GREEN after the Metal fix: 2/2 touch and Apple-keyboard UI tests and 10/10 input/pressure tests
   passed. The FTL host's shader-cache assertion occurs only after XCTest forces process exit and is
   also present in the pre-fix result.
+- RED then GREEN: iOS Extension management previously entered its subprocess path. The shared JSON
+  command runner now returns one deterministic fatal message on iOS, while `bpy`, NumPy, and the
+  bundled SVG add-on remain usable.
+- RED then GREEN: package validation allowed loadable Python `.so` files. The install step now moves
+  all 19 NumPy binaries into signed frameworks, writes CPython `.fwork`/`.origin` redirects, and
+  validates a package containing 74 loadable Mach-O files with no remaining Python `.so` files.
+- RED: CPython's `AppleFrameworkLoader` crashed on the first NumPy import because Blender replaced
+  the missing standalone iOS Python executable with `sys.executable = None`.
+- GREEN: iOS Python initialization now uses the Blender app binary as `sys.executable`. A fresh
+  Simulator run imported NumPy, enabled the bundled add-on, exercised the Extension policy, wrote a
+  2,091,108-byte Blender screenshot, and had zero traceback, import, dyld, or resource-warning log
+  patterns.
 
-Current loop: third-party Files-provider permission and iOS Python/add-on/Extensions policy.
+Current loop: signed physical-iPhone framework regression, third-party Files-provider permission,
+and remaining platform gaps (Cycles, UIKit scene lifecycle, and physical-iPad coverage).

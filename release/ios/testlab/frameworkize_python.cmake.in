@@ -1,0 +1,87 @@
+set(_app_dir "${CMAKE_INSTALL_PREFIX}/Blender.app")
+set(_module_root
+  "${_app_dir}/Assets/@BLENDER_VERSION@/python/lib/python@PYTHON_VERSION@/site-packages"
+)
+execute_process(
+  COMMAND
+    "@PYTHON_EXECUTABLE@"
+    "@CMAKE_SOURCE_DIR@/release/ios/testlab/frameworkize_python.py"
+    "${_app_dir}"
+    "${_module_root}"
+    --bundle-identifier "@BLENDER_IOS_BUNDLE_IDENTIFIER@"
+    --platform "@_ios_python_platform@"
+    --minimum-os "@CMAKE_OSX_DEPLOYMENT_TARGET@"
+  RESULT_VARIABLE _frameworkize_result
+  OUTPUT_VARIABLE _frameworkize_output
+  ERROR_VARIABLE _frameworkize_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_STRIP_TRAILING_WHITESPACE
+)
+if(NOT _frameworkize_result EQUAL 0)
+  message(FATAL_ERROR "Failed to package iOS Python modules: ${_frameworkize_error}")
+endif()
+
+if("@_ios_python_platform@" STREQUAL "iPhoneSimulator")
+  set(_codesign_identity "-")
+elseif(NOT "$ENV{EXPANDED_CODE_SIGN_IDENTITY}" STREQUAL "")
+  set(_codesign_identity "$ENV{EXPANDED_CODE_SIGN_IDENTITY}")
+else()
+  execute_process(
+    COMMAND security find-identity -v -p codesigning
+    COMMAND sed -n 1p
+    COMMAND sed "s/\"//g"
+    COMMAND awk "{$1=$2=\"\"; print $0}"
+    COMMAND awk "{$1=$1};1"
+    RESULT_VARIABLE _identity_result
+    OUTPUT_VARIABLE _codesign_identity
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT _identity_result EQUAL 0 OR _codesign_identity STREQUAL "")
+    message(FATAL_ERROR "No code-signing identity is available for iOS Python frameworks")
+  endif()
+endif()
+
+file(GLOB _python_origins "${_app_dir}/Frameworks/*.framework/*.origin")
+foreach(_origin IN LISTS _python_origins)
+  get_filename_component(_framework "${_origin}" DIRECTORY)
+  execute_process(
+    COMMAND codesign
+      --force
+      --sign "${_codesign_identity}"
+      --options runtime
+      --timestamp=none
+      "${_framework}"
+    RESULT_VARIABLE _codesign_result
+    ERROR_VARIABLE _codesign_error
+  )
+  if(NOT _codesign_result EQUAL 0)
+    message(FATAL_ERROR "Failed to sign iOS Python framework: ${_codesign_error}")
+  endif()
+endforeach()
+list(LENGTH _python_origins _python_framework_count)
+message(STATUS "Packaged ${_python_framework_count} iOS Python module frameworks")
+
+if(NOT "@_ios_original_postinstall_script@" STREQUAL "")
+  include("@_ios_original_postinstall_script@")
+endif()
+
+if("@_ios_python_platform@" STREQUAL "iPhoneSimulator")
+  set(_app_codesign_options --options 0)
+else()
+  set(_app_codesign_options --options runtime)
+endif()
+execute_process(
+  COMMAND codesign
+    --force
+    --sign "${_codesign_identity}"
+    ${_app_codesign_options}
+    --timestamp=none
+    --preserve-metadata=identifier,entitlements
+    --generate-entitlement-der
+    "${_app_dir}"
+  RESULT_VARIABLE _app_codesign_result
+  ERROR_VARIABLE _app_codesign_error
+)
+if(NOT _app_codesign_result EQUAL 0)
+  message(FATAL_ERROR "Failed to seal the iOS app after installation: ${_app_codesign_error}")
+endif()

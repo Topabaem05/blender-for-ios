@@ -810,5 +810,18 @@ if(WITH_APPLE_CROSSPLATFORM)
     # Entitlements file reference
     # `release/ios` is hardcoded since we want to use the same entitlements for both iOS-Simulator and normal iOS builds.
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/release/ios/entitlements.plist")
+
+    if(CMAKE_OSX_SYSROOT MATCHES "[iI]PhoneSimulator")
+      set(_ios_python_platform "iPhoneSimulator")
+    else()
+      set(_ios_python_platform "iPhoneOS")
+    endif()
+    set(_ios_original_postinstall_script "${POSTINSTALL_SCRIPT}")
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/release/ios/testlab/frameworkize_python.cmake.in"
+      "${CMAKE_BINARY_DIR}/release/ios/frameworkize_python.cmake"
+      @ONLY
+    )
+    set(POSTINSTALL_SCRIPT "${CMAKE_BINARY_DIR}/release/ios/frameworkize_python.cmake")
   endif()
 endif()

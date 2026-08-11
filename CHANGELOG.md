@@ -15,6 +15,9 @@
 - Added package validation that rejects unresolved Git LFS pointers inside `Blender.app`.
 - Added iPad Simulator regressions for viewport touch, Apple keyboard modifiers and shortcuts, and
   the supplied 141 MB `.blend` document lifecycle.
+- Added package validation and focused tests for CPython iOS native modules stored as signed
+  frameworks with `.fwork` and `.origin` redirects.
+- Documented the iOS Python, bundled add-on, wheel, and runtime Extensions support policy.
 
 ### Fixed
 
@@ -37,5 +40,11 @@
 - Enabled the macOS-style Command keymap conversion when Python reports the iOS platform.
 - Made Simulator VBO-backed Metal textures use private mirrored storage, as required by the
   Simulator Metal runtime, without changing the physical-device path.
+- Blocked subprocess-based Blender Extension installation and management with a deterministic iOS
+  error while retaining bundled add-ons and document scripts.
+- Packaged all 19 bundled NumPy extension modules as signed iOS frameworks and rejected loadable
+  Python `.so` files left outside `Frameworks`.
+- Kept `sys.executable` anchored to the Blender app binary on iOS so CPython's
+  `AppleFrameworkLoader` can resolve packaged native modules.
 
-Verification updated: 2026-08-12 02:01 KST.
+Verification updated: 2026-08-12 03:20 KST.

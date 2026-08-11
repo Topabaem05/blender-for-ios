@@ -21,6 +21,7 @@
 
 #include "CLG_log.h"
 
+#include "BLI_build_config.h"
 #include "BLI_path_utils.hh"
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
@@ -501,8 +502,15 @@ void BPY_python_start(bContext *C, int argc, const char **argv)
      * can launch new Python instances. */
     {
       char program_path[FILE_MAX];
-      if (BKE_appdir_program_python_search(
-              program_path, sizeof(program_path), PY_MAJOR_VERSION, PY_MINOR_VERSION))
+#if OS_IOS
+      /* CPython's AppleFrameworkLoader resolves frameworks relative to `sys.executable`. */
+      STRNCPY(program_path, BKE_appdir_program_path());
+      const bool program_path_found = true;
+#else
+      const bool program_path_found = BKE_appdir_program_python_search(
+          program_path, sizeof(program_path), PY_MAJOR_VERSION, PY_MINOR_VERSION);
+#endif
+      if (program_path_found)
       {
         status = PyConfig_SetBytesString(&config, &config.executable, program_path);
         pystatus_exit_on_error(status);

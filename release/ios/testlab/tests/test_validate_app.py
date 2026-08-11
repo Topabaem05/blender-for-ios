@@ -83,6 +83,43 @@ class ValidateAppTests(unittest.TestCase):
                     ),
                 )
 
+    def test_rejects_python_extension_outside_frameworks(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            extension = (
+                app
+                / "Assets"
+                / "5.1"
+                / "python"
+                / "lib"
+                / "python3.13"
+                / "site-packages"
+                / "numpy"
+                / "_core"
+                / "_multiarray_umath.cpython-313-iphoneos.so"
+            )
+            extension.parent.mkdir(parents=True)
+            extension.write_bytes(b"extension")
+            base_runner = self.command_runner(executable, library)
+
+            def run(command):
+                path = Path(command[-1])
+                if path != extension:
+                    return base_runner(command)
+                if command[0] == "file":
+                    return "Mach-O 64-bit bundle arm64"
+                if command[:2] == ["otool", "-L"]:
+                    return (
+                        f"{path}:\n\t/usr/lib/libSystem.B.dylib "
+                        "(compatibility version 1.0.0, current version 1.0.0)\n"
+                    )
+                if command[:2] == ["otool", "-l"]:
+                    return ""
+                raise AssertionError(command)
+
+            with self.assertRaisesRegex(ValueError, "Python extension outside Frameworks"):
+                validate_app.validate_runtime(app, command_runner=run)
+
     def test_rejects_app_without_loadable_macho(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             app, executable, library = self.create_app(Path(temp_dir))

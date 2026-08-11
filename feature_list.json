@@ -5,15 +5,18 @@
     {"id": "universal-device-family", "status": "completed", "evidence": "app and XCTest Xcode settings are 1,2; 12 package tests pass"},
     {"id": "cold-launch", "status": "completed", "evidence": "physical iPhone launch succeeded and the Blender process remained alive after 10 seconds"},
     {"id": "touch-edit", "status": "completed", "evidence": "readiness-synchronized physical XCUITest tapped the viewport; the app report recorded selected=true and the screenshot shows the selected Cube"},
-    {"id": "python", "status": "completed", "evidence": "device smoke executed bpy and NumPy inside Blender 5.1.2"},
+    {"id": "python", "status": "completed", "evidence": "physical-device smoke executed bpy and NumPy; Simulator Python 3.13.9 also imports all framework-packaged NumPy modules"},
     {"id": "save-resume-reopen", "status": "completed", "evidence": "device saved a 96 KB blend file, reopened it in a new process, and preserved state across background/foreground"},
     {"id": "documents-io", "status": "completed", "evidence": "physical iPhone opened the supplied 141 MB Blender 5.2 file with autoexec disabled, saved and reopened 141884312 bytes, and round-tripped OBJ, PLY, and STL"},
     {"id": "files-open-in-place", "status": "in_progress", "evidence": "physical iPhone opened a Files-visible Blender Documents URL with autoexec disabled; the original NSURL now survives until balanced scope release, while a third-party provider permission test remains"},
     {"id": "apple-keyboard", "status": "completed", "evidence": "iPad Simulator performed observable transform, Shift duplicate, Option clear-location, Command undo, and Control full-screen shortcuts"},
     {"id": "ipad-simulator", "status": "completed", "evidence": "10 FTL and 2 UI tests pass; the supplied 141 MB file opens, saves, reopens, round-trips OBJ/PLY/STL, renders the full editor, and remains alive after the private-Metal-buffer fix"},
-    {"id": "python-extensions-policy", "status": "pending", "evidence": "iOS platform detection, executable-code policy, tests, and user-facing documentation remain"},
+    {"id": "python-native-frameworks", "status": "in_progress", "evidence": "Simulator package has 19 signed native-module frameworks, 19 .fwork redirects, 19 .origin files, zero Python .so files, and a passing NumPy runtime; signed physical-device regression remains"},
+    {"id": "python-extensions-policy", "status": "completed", "evidence": "bpy, document scripts, bundled add-ons, and build-time wheels are supported; subprocess-based runtime Extension install and management return a deterministic iOS error and the policy is documented"},
     {"id": "primary-render", "status": "completed", "evidence": "physical iPhone produced a 64x64 Workbench PNG"},
     {"id": "cycles-render", "status": "pending", "evidence": "Cycles is not included in the current iOS build; the supplied scene reports the engine unavailable"},
-    {"id": "runtime-assets", "status": "completed", "evidence": "18 brush, node, and startup-template LFS payloads are materialized; the physical launch log has zero asset-format warnings"}
+    {"id": "runtime-assets", "status": "completed", "evidence": "18 brush, node, and startup-template LFS payloads are materialized; the physical launch log has zero asset-format warnings"},
+    {"id": "uikit-scene-lifecycle", "status": "pending", "evidence": "current builds run, but UIKit warns that UIScene adoption will become mandatory and the full-screen plist key will be ignored"},
+    {"id": "physical-ipad", "status": "pending", "evidence": "iPad Simulator coverage is green; no physical iPad is available for release regression"}
   ]
 }
