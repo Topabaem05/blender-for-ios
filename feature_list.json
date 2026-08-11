@@ -7,6 +7,11 @@
     {"id": "touch-edit", "status": "completed", "evidence": "readiness-synchronized physical XCUITest tapped the viewport; the app report recorded selected=true and the screenshot shows the selected Cube"},
     {"id": "python", "status": "completed", "evidence": "device smoke executed bpy and NumPy inside Blender 5.1.2"},
     {"id": "save-resume-reopen", "status": "completed", "evidence": "device saved a 96 KB blend file, reopened it in a new process, and preserved state across background/foreground"},
+    {"id": "documents-io", "status": "completed", "evidence": "physical iPhone opened the supplied 141 MB Blender 5.2 file with autoexec disabled, saved and reopened 141884312 bytes, and round-tripped OBJ, PLY, and STL"},
+    {"id": "files-open-in-place", "status": "pending", "evidence": "security-scoped Files-provider URL flow still requires a physical-device test"},
+    {"id": "apple-keyboard", "status": "pending", "evidence": "UIKit key and modifier delivery plus observable Blender shortcut tests remain"},
+    {"id": "ipad-simulator", "status": "pending", "evidence": "simulator dependency closure, full-editor layout, and core smoke checks remain"},
+    {"id": "python-extensions-policy", "status": "pending", "evidence": "iOS platform detection, executable-code policy, tests, and user-facing documentation remain"},
     {"id": "primary-render", "status": "completed", "evidence": "physical iPhone produced a 64x64 Workbench PNG"},
     {"id": "runtime-assets", "status": "completed", "evidence": "18 brush, node, and startup-template LFS payloads are materialized; the physical launch log has zero asset-format warnings"}
   ]

@@ -65,6 +65,7 @@
 #include "DEG_depsgraph_debug.hh"
 #include "DEG_depsgraph_query.hh"
 
+#include "GPU_context.hh"
 #include "GPU_framebuffer.hh"
 #include "GPU_immediate.hh"
 #include "GPU_immediate_util.hh"
@@ -2132,6 +2133,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
     ofs = nullptr;
   }
 
+  GPUContext *old_context = GPU_context_active_get();
   gpu::FrameBuffer *old_fb = GPU_framebuffer_active_get();
 
   if (old_fb) {
@@ -2249,7 +2251,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
 
   DRW_gpu_context_disable();
 
-  if (old_fb) {
+  if (old_fb && GPU_context_active_get() == old_context) {
     GPU_framebuffer_bind(old_fb);
   }
 

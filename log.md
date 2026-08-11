@@ -1,5 +1,14 @@
 # Port Log
 
+## 2026-08-11
+
+- Reproduced a physical-iPhone `SIGABRT` while saving the supplied Blender 5.2 file and traced it to
+  `ED_view3d_draw_offscreen_imbuf` restoring a framebuffer after the active Metal context changed.
+- Added the minimum context-identity guard and a staged physical-device Documents regression.
+- Built and signed a runtime-closed arm64 app, installed it through CoreDevice, and observed the
+  supplied 141 MB file open, save, reopen, OBJ/PLY/STL round-trip, and screenshot successfully.
+- Confirmed the Blender process remained alive and no new Blender crash report appeared.
+
 ## 2026-08-10
 
 - Selected `ios/ipad-mvp` as the smallest complete iOS baseline.

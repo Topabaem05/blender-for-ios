@@ -37,5 +37,10 @@ The signed universal editor and physical-iPhone workflow are GREEN.
   packaging tests pass.
 - The public fork now resolves its inherited LFS payloads from the official Blender upstream object
   store instead of the empty GitHub fork endpoint.
+- RED: saving the supplied Blender 5.2 file aborted while an offscreen thumbnail path rebound a
+  framebuffer from the GPU context that had been active before the file load.
+- GREEN: offscreen viewport drawing now restores a framebuffer only when its owning GPU context is
+  still active. A freshly built and signed app opened the 141,369,967-byte input, saved and reopened
+  141,884,312 bytes, round-tripped OBJ/PLY/STL, and remained alive with no new crash report.
 
-Current loop: final regression, checkpoint push, and independent evaluation.
+Current loop: Files-provider open-in-place and Apple keyboard shortcut regression tests.

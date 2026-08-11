@@ -18,6 +18,10 @@ No runtime workaround is accepted without a regression test or a reproducible de
   Workbench render, process-restart reopen, and background/foreground state preservation.
 - Complete on the connected iPhone: readiness-synchronized XCUITest viewport tap followed by an
   in-process `bpy` Cube selection assertion and visual screenshot verification.
+- Complete on the connected iPhone: the supplied 141 MB Blender 5.2 file opens with auto-execution
+  disabled, saves and reopens in Documents, and round-trips OBJ, PLY, and STL without a crash.
 - Complete: all packaged brush, node, and startup-template LFS payloads are materialized; package
   validation rejects pointer text and the physical launch log has zero asset-format warnings.
+- Pending: Files-provider open-in-place, Apple keyboard shortcuts, iPad Simulator UI, and the iOS
+  scripting/add-on/Extensions policy.
 - Pending outside the available hardware: physical-iPad regression before universal release support.
