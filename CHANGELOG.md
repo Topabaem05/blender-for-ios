@@ -17,6 +17,8 @@
   the supplied 141 MB `.blend` document lifecycle.
 - Added package validation and focused tests for CPython iOS native modules stored as signed
   frameworks with `.fwork` and `.origin` redirects.
+- Hardened package validation so each `.fwork` marker must resolve to a framework executable with
+  a matching `.origin` redirect, and every resolved executable must be loadable Mach-O.
 - Documented the iOS Python, bundled add-on, wheel, and runtime Extensions support policy.
 
 ### Fixed
@@ -48,5 +50,30 @@
   `AppleFrameworkLoader` can resolve packaged native modules.
 - Selected `Python.framework` only when its binary exists and otherwise retained the available
   static iOS Python library, with an early configure error when neither runtime is present.
+- Fixed the iOS software-keyboard path to derive window coordinates from the active button data's
+  region, preventing `block_to_window_fl` from receiving a stale region after UI changes.
 
-Verification updated: 2026-08-12 04:56 KST.
+### Verified
+
+- Completed the device `build-for-testing` pass across 4,250 compile units, then validated the
+  signed staging app with 55 loadable Mach-O files and completed 54/54 testlab checks.
+- On the connected iPhone, held a cold launch for 30 seconds; edited and saved a scene with `bpy`
+  and NumPy, reopened it after relaunch, and exercised Python 3.13, a Documents `.py` script, a
+  bundled add-on, the runtime Extensions block, and limited Workbench, Eevee, and Cycles renders.
+- Opened the supplied 141,369,967-byte `.blend` with auto-execution disabled, saved it, exported
+  and reimported OBJ, PLY, and STL, and reopened the result after relaunch.
+- Preserved the same process across background/foreground and opened a payload delivered through
+  the iOS application URL callback.
+- Validated a new signed arm64 staging app across 55 loadable Mach-O files with deep code signing,
+  then installed it on the connected iPhone.
+- Reproduced the pre-fix software-keyboard crash in `block_to_window_fl`; after the region fix, the
+  native text field appeared, accepted Unicode text, Delete, and Done, without an app crash.
+- Passed physical UI regressions for rotation, viewport tap, and Shift, Option, Command, and
+  Control modifiers. Each result recorded one passing test and zero failing tests.
+- The software-keyboard end-to-end notification probe remains locked after four attempts; the
+  remaining issue is dialog/probe exposure rather than another observed application crash.
+- Mutation tests rejected broken `.fwork` targets, missing or mismatched `.origin` redirects, and
+  non-Mach-O framework executables. Host-authorized strict and deep code-signing checks passed; a
+  sandbox-only trust failure was isolated from the signed package result.
+
+Verification updated: 2026-08-13 00:59 KST. The full testlab result is 54/54 PASS.

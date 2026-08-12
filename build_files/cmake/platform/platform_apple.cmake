@@ -33,6 +33,7 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(WITH_SDL OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_INPUT_NDOF OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_PYTHON_MODULE OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
+  set(WITH_PYTHON_SECURITY ON CACHE BOOL "Disable automatic Python execution on iOS" FORCE)
   # Disable these modules for now
   set(WITH_PYTHON_INSTALL_ZSTANDARD OFF CACHE BOOL "Disable until iOS build supports SSL" FORCE)
   # Disable Audaspace as it had dependencies on CoreAudio components which do not exist on iOS
@@ -229,6 +230,13 @@ else()
     list(APPEND CMAKE_BUILD_RPATH "${LIBDIR}/python")
     list(APPEND CMAKE_INSTALL_RPATH "@loader_path/Frameworks")
     install(DIRECTORY "${PYTHON_FRAMEWORK_DIR}" DESTINATION "./Blender.app/Frameworks")
+    set(BLENDER_IOS_PRIVACY_MANIFEST
+      "${CMAKE_SOURCE_DIR}/release/ios/Blender.app/PrivacyInfo.xcprivacy"
+    )
+    install(
+      FILES "${BLENDER_IOS_PRIVACY_MANIFEST}"
+      DESTINATION "./Blender.app/Frameworks/Python.framework"
+    )
   elseif(EXISTS "${PYTHON_LIBPATH}/libpython${PYTHON_VERSION}.a")
     set(PYTHON_LIBRARY "${PYTHON_LIBPATH}/libpython${PYTHON_VERSION}.a")
   else()

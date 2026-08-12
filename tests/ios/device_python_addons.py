@@ -30,6 +30,15 @@ def run():
         assert namespace["result"] == 10
         assert int(numpy.arange(4).sum()) == 6
 
+        script_path = os.path.join(output_dir, "user-script.py")
+        with open(script_path, "w", encoding="utf-8") as script_file:
+            script_file.write(
+                "import bpy\n"
+                'bpy.context.scene["ios_user_script_result"] = 42\n'
+            )
+        assert bpy.ops.script.python_file_run(filepath=script_path) == {"FINISHED"}
+        assert bpy.context.scene["ios_user_script_result"] == 42
+
         addon_module = addon_utils.enable(addon_name, default_set=False)
         assert addon_module is not None
         assert addon_utils.check(addon_name)[1]
@@ -61,6 +70,7 @@ def run():
             "python_version": list(sys.version_info[:3]),
             "blender_version": bpy.app.version_string,
             "numpy_sum": int(numpy.arange(4).sum()),
+            "user_script_result": bpy.context.scene["ios_user_script_result"],
             "bundled_addon": addon_name,
             "bundled_addon_enabled": True,
             "extension_messages": extension_messages,

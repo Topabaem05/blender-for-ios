@@ -1,4 +1,5 @@
 import importlib.util
+import plistlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,27 @@ SPEC.loader.exec_module(validate_app)
 
 
 class ValidateAppTests(unittest.TestCase):
+    def privacy_manifest(self):
+        return {
+            "NSPrivacyTracking": False,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [
+                {
+                    "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                    "NSPrivacyAccessedAPITypeReasons": ["C617.1", "3B52.1"],
+                },
+                {
+                    "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                    "NSPrivacyAccessedAPITypeReasons": ["35F9.1"],
+                },
+                {
+                    "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+                    "NSPrivacyAccessedAPITypeReasons": ["E174.1"],
+                },
+            ],
+        }
+
     def create_app(self, root):
         app = root / "Blender.app"
         executable = app / "Blender"
@@ -18,6 +40,26 @@ class ValidateAppTests(unittest.TestCase):
         library.parent.mkdir(parents=True)
         executable.write_bytes(b"main")
         library.write_bytes(b"library")
+        (app / "Assets.car").write_bytes(b"compiled assets")
+        (app / "Main.storyboardc").mkdir()
+        (app / "Info.plist").write_bytes(
+            plistlib.dumps(
+                {
+                    "UIDeviceFamily": [1, 2],
+                    "UILaunchStoryboardName": "Main",
+                    "UIMainStoryboardFile": "Main",
+                }
+            )
+        )
+        (app / "PrivacyInfo.xcprivacy").write_bytes(
+            plistlib.dumps(self.privacy_manifest())
+        )
+        python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+        python_dir.mkdir(parents=True)
+        (python_dir / "_sysconfigdata__ios_arm64-iphoneos.py").write_text(
+            "build_time_vars = {'MACHDEP': 'ios', "
+            "'EXT_SUFFIX': '.cpython-313-iphoneos.so'}\n"
+        )
         return app, executable, library
 
     def command_runner(self, executable, library, *, main_dependency="@rpath/libdependency.dylib"):
@@ -54,6 +96,52 @@ class ValidateAppTests(unittest.TestCase):
             )
 
             self.assertEqual(result, {"loadable_machos": 2})
+
+    def test_rejects_missing_app_privacy_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            (app / "PrivacyInfo.xcprivacy").unlink()
+
+            with self.assertRaisesRegex(ValueError, "missing app privacy manifest"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_missing_compiled_asset_catalog(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            (app / "Assets.car").unlink()
+
+            with self.assertRaisesRegex(ValueError, "missing compiled asset catalog"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_missing_compiled_storyboard(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            (app / "Main.storyboardc").rmdir()
+
+            with self.assertRaisesRegex(ValueError, "missing compiled launch storyboard"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_missing_python_framework_privacy_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python = app / "Frameworks" / "Python.framework" / "Python"
+            python.parent.mkdir(parents=True)
+            python.write_bytes(b"python")
+
+            with self.assertRaisesRegex(ValueError, "missing Python framework privacy manifest"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
 
     def test_rejects_missing_rpath_dependency(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -126,6 +214,228 @@ class ValidateAppTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "no loadable Mach-O"):
                 validate_app.validate_runtime(app, command_runner=lambda command: "ASCII text")
+
+    def test_rejects_darwin_python_runtime_for_ios(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            (python_dir / "_sysconfigdata__ios_arm64-iphoneos.py").unlink()
+            (python_dir / "_sysconfigdata__darwin_arm64-iphoneos.py").write_text(
+                "build_time_vars = {'MACHDEP': 'darwin', 'EXT_SUFFIX': "
+                "'.cpython-313-arm64-iphoneos.so'}\n"
+            )
+
+            with self.assertRaisesRegex(ValueError, "Python runtime is not configured for iOS"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_missing_python_sysconfig(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            (
+                app
+                / "Assets"
+                / "5.1"
+                / "python"
+                / "lib"
+                / "python3.13"
+                / "_sysconfigdata__ios_arm64-iphoneos.py"
+            ).unlink()
+
+            with self.assertRaisesRegex(ValueError, "missing Python sysconfig file"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_python_framework_marker_with_wrong_extension_suffix(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            (python_dir / "_sysconfigdata__ios_arm64-iphoneos.py").unlink()
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            (python_dir / "_sysconfigdata__ios_arm64-iphoneos.py").write_text(
+                "build_time_vars = {'MACHDEP': 'ios', "
+                "'EXT_SUFFIX': '.cpython-313-iphoneos.so'}\n"
+            )
+            (module_dir / "_multiarray_umath.cpython-313-arm64-iphoneos.fwork").write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+
+            with self.assertRaisesRegex(ValueError, "Python framework marker has wrong suffix"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_accepts_ios_python_framework_marker(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            (python_dir / "_sysconfigdata__ios_arm64-iphoneos.py").write_text(
+                "build_time_vars = {'MACHDEP': 'ios', "
+                "'EXT_SUFFIX': '.cpython-313-iphoneos.so'}\n"
+            )
+            (module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork").write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+            framework = (
+                app
+                / "Frameworks"
+                / "numpy._core._multiarray_umath.framework"
+            )
+            framework.mkdir(parents=True)
+            (framework / "numpy._core._multiarray_umath").write_bytes(b"framework")
+            (framework / "numpy._core._multiarray_umath.origin").write_text(
+                f"{(module_dir / '_multiarray_umath.cpython-313-iphoneos.fwork').relative_to(app).as_posix()}\n"
+            )
+            framework_binary = framework / "numpy._core._multiarray_umath"
+            base_runner = self.command_runner(executable, library)
+
+            def run(command):
+                if Path(command[-1]) == framework_binary and command[0] == "file":
+                    return "Mach-O 64-bit bundle arm64"
+                return base_runner(command)
+
+            result = validate_app.validate_runtime(
+                app,
+                command_runner=run,
+            )
+
+            self.assertEqual(result, {"loadable_machos": 3})
+
+    def test_rejects_python_framework_marker_with_missing_executable(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            marker = module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork"
+            marker.write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+
+            with self.assertRaisesRegex(ValueError, "framework executable"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_python_framework_marker_outside_frameworks(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            marker = module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork"
+            marker.write_text("Assets/not-a-framework\n")
+            target = app / "Assets" / "not-a-framework"
+            target.write_bytes(b"placeholder")
+            (app / "Assets" / "not-a-framework.origin").write_text(
+                f"{marker.relative_to(app).as_posix()}\n"
+            )
+            base_runner = self.command_runner(executable, library)
+
+            def run(command):
+                if Path(command[-1]) == target and command[0] == "file":
+                    return "Mach-O 64-bit bundle arm64"
+                return base_runner(command)
+
+            with self.assertRaisesRegex(ValueError, "invalid target"):
+                validate_app.validate_runtime(app, command_runner=run)
+
+    def test_rejects_python_framework_marker_with_missing_origin(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            marker = module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork"
+            marker.write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+            framework = (
+                app
+                / "Frameworks"
+                / "numpy._core._multiarray_umath.framework"
+            )
+            framework.mkdir(parents=True)
+            target = framework / "numpy._core._multiarray_umath"
+            target.write_bytes(b"framework")
+            base_runner = self.command_runner(executable, library)
+
+            def run(command):
+                if Path(command[-1]) == target and command[0] == "file":
+                    return "Mach-O 64-bit bundle arm64"
+                return base_runner(command)
+
+            with self.assertRaisesRegex(ValueError, "missing origin"):
+                validate_app.validate_runtime(app, command_runner=run)
+
+    def test_rejects_python_framework_marker_with_mismatched_origin(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            marker = module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork"
+            marker.write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+            framework = (
+                app
+                / "Frameworks"
+                / "numpy._core._multiarray_umath.framework"
+            )
+            framework.mkdir(parents=True)
+            (framework / "numpy._core._multiarray_umath").write_bytes(b"framework")
+            (framework / "numpy._core._multiarray_umath.origin").write_text(
+                "Assets/5.1/python/lib/python3.13/site-packages/other.fwork\n"
+            )
+
+            with self.assertRaisesRegex(ValueError, "origin"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
+    def test_rejects_python_framework_marker_with_non_macho_executable(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            python_dir = app / "Assets" / "5.1" / "python" / "lib" / "python3.13"
+            module_dir = python_dir / "site-packages" / "numpy" / "_core"
+            module_dir.mkdir(parents=True)
+            marker = module_dir / "_multiarray_umath.cpython-313-iphoneos.fwork"
+            marker.write_text(
+                "Frameworks/numpy._core._multiarray_umath.framework/"
+                "numpy._core._multiarray_umath\n"
+            )
+            framework = (
+                app
+                / "Frameworks"
+                / "numpy._core._multiarray_umath.framework"
+            )
+            framework.mkdir(parents=True)
+            (framework / "numpy._core._multiarray_umath").write_bytes(b"placeholder")
+            (framework / "numpy._core._multiarray_umath.origin").write_text(
+                f"{marker.relative_to(app).as_posix()}\n"
+            )
+
+            with self.assertRaisesRegex(ValueError, "loadable Mach-O"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
 
     def test_allows_only_xcode_xctest_support_dependencies_when_requested(self):
         with tempfile.TemporaryDirectory() as temp_dir:

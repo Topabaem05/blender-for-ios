@@ -1,7 +1,39 @@
 # Port Log
 
+## 2026-08-13
+
+- Reproduced the physical software-keyboard crash in `block_to_window_fl` and traced it to window
+  conversion using a region that did not belong to the active button data.
+- Updated `source/blender/editors/interface/interface_handlers.cc` to use the active button data's
+  region. The post-fix native text field appeared on the connected iPhone and accepted Unicode
+  text, Delete, and Done without an app crash.
+- Passed the physical rotation, viewport tap, and Shift/Option/Command/Control modifier UI
+  regressions; each reported one passing test and zero failing tests.
+- Kept the software-keyboard end-to-end notification case locked after four attempts. The remaining
+  issue is test probe/dialog exposure, not a newly observed app crash.
+- Validated a new signed arm64 staging app across 55 loadable Mach-O files, deep code signing, and
+  physical installation, and completed the full 54/54 testlab run.
+- Hardened `.fwork` validation to require the referenced framework executable, a matching `.origin`
+  redirect, and a loadable Mach-O executable. RED mutations confirmed each invalid chain is rejected.
+- Passed host-authorized strict and deep code-signing checks. Isolated the sandbox trust failure as
+  an environment restriction, not a signed-package defect.
+- Kept the fresh iPad Simulator run and App Store P0 gates pending.
+
 ## 2026-08-12
 
+- Completed the device `build-for-testing` pass across 4,250 compile units, staged the signed app,
+  validated 55 loadable Mach-O files, and completed 54/54 testlab checks.
+- Installed that staged app on the connected iPhone, observed a 30-second cold launch, and passed
+  scene editing, NumPy, `.blend` save, Workbench render, and relaunch/reopen smoke checks.
+- Passed Python 3.13, `bpy`, NumPy, a Documents `.py` script, and a bundled add-on; runtime Extension
+  management remained blocked as required by the iOS policy.
+- Passed limited Workbench, Eevee, and Cycles render checks.
+- Opened the supplied 141,369,967-byte `.blend` with autoexec disabled, saved it, exported and
+  reimported OBJ, PLY, and STL, and reopened the result after relaunch with autoexec still disabled.
+- Preserved the same process through background/foreground and passed the iOS payload URL callback.
+- Left the software-keyboard UI case locked and the fresh new iPad Simulator cases pending.
+- Recorded the remaining App Store P0 gates: release-profile user-code enforcement, third-party
+  open-in-place, Blender trademark permission, and GPL distribution review.
 - Verified five Apple keyboard paths on iPad Simulator: unmodified transform, Shift duplicate,
   Option clear location, Command undo, and Control full-screen toggle.
 - Reproduced a Simulator-only `MTLSimBuffer` assertion while drawing the supplied Blender 5.2

@@ -3652,7 +3652,7 @@ static void ui_textedit_begin(bContext *C, Button *but, HandleButtonData *data)
    there must be a better way
    */
   rcti button_pixel_rect;
-  ARegion *region = CTX_wm_region(C);
+  ARegion *region = data->region;
   button_to_pixelrect(&button_pixel_rect, region, but->block, but);
   GHOST_Rect text_box(button_pixel_rect.xmin + region->winrct.xmin,
                       button_pixel_rect.ymin + region->winrct.ymin,

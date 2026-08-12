@@ -64,6 +64,7 @@ def observe_open_url():
         opened = os.path.basename(bpy.data.filepath) == os.path.basename(fixture_path)
         marked = any(scene.get("ios_open_url_fixture") == marker for scene in bpy.data.scenes)
         if opened and marked:
+            assert not bpy.context.preferences.filepaths.use_scripts_auto_execute
             screenshot_path = os.path.join(output_dir, "open-url-screen.png")
             assert bpy.ops.screen.screenshot(filepath=screenshot_path) == {"FINISHED"}
             write_report(

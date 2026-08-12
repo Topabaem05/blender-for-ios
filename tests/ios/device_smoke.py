@@ -3,7 +3,6 @@ import os
 import traceback
 
 import bpy
-import numpy
 
 
 output_dir = os.path.expanduser("~/Documents/BlenderIOSQA")
@@ -14,6 +13,8 @@ run_id = os.environ.get("BLENDER_IOS_QA_RUN_ID", "manual")
 def run():
     report = {"status": "failed", "run_id": run_id}
     try:
+        import numpy
+
         os.makedirs(output_dir, exist_ok=True)
 
         cube = bpy.data.objects["Cube"]

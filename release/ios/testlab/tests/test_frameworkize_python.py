@@ -7,10 +7,20 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).parents[1] / "frameworkize_python.py"
+INSTALL_SCRIPT = Path(__file__).parents[1] / "frameworkize_python.cmake.in"
 PLATFORM_APPLE = Path(__file__).parents[4] / "build_files/cmake/platform/platform_apple.cmake"
 
 
 class FrameworkizePythonTests(unittest.TestCase):
+    def test_postinstall_resigns_every_embedded_python_framework(self):
+        source = INSTALL_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'file(GLOB _python_frameworks "${_app_dir}/Frameworks/*.framework")',
+            source,
+        )
+        self.assertIn("foreach(_framework IN LISTS _python_frameworks)", source)
+
     def test_moves_extension_into_framework_and_writes_loader_markers(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             app = Path(temp_dir) / "Blender.app"
@@ -77,6 +87,14 @@ class FrameworkizePythonTests(unittest.TestCase):
 
 
 class PlatformAppleTests(unittest.TestCase):
+    def test_disables_python_auto_execution_by_default_on_ios(self):
+        source = PLATFORM_APPLE.read_text()
+
+        self.assertIn(
+            'set(WITH_PYTHON_SECURITY ON CACHE BOOL "Disable automatic Python execution on iOS" FORCE)',
+            source,
+        )
+
     def test_selects_an_available_python_runtime_for_ios(self):
         source = PLATFORM_APPLE.read_text()
 

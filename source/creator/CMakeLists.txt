@@ -351,10 +351,17 @@ if(WITH_PYTHON_MODULE)
 else()
 
   if(WITH_APPLE_CROSSPLATFORM)
-    # Add Storyboard - required for main window interface.
-    set(storyboards ${OSX_APP_SOURCEDIR}/Main.storyboard)
+    # Add iOS resources required for the main window and App Store packaging.
+    set(ios_app_resources
+      ${OSX_APP_SOURCEDIR}/Main.storyboard
+      ${OSX_APP_SOURCEDIR}/PrivacyInfo.xcprivacy
+    )
+    set(ios_asset_catalog ${OSX_APP_SOURCEDIR}/AppIcon.xcassets)
+    set_source_files_properties(${ios_asset_catalog} PROPERTIES
+      MACOSX_PACKAGE_LOCATION Resources
+    )
 
-    add_executable(blender ${EXETYPE} ${SRC} ${storyboards})
+    add_executable(blender ${EXETYPE} ${SRC} ${ios_app_resources} ${ios_asset_catalog})
 
     # Additional libraries required by static python extensions compiled directly in source.
     # Otherwise will see Python linking issues during linking in Xcode about missing SSL etc.
@@ -1732,7 +1739,7 @@ elseif(APPLE)
       MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}"
     )
 
-    set(allresources ${storyboards})
+    set(allresources ${ios_app_resources})
     set_target_properties(blender PROPERTIES RESOURCE "${allresources}")
 
     # Xcode Archiving support (Testflight, App Store, etc...)
@@ -1742,6 +1749,7 @@ elseif(APPLE)
       XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
       XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
       XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING "NO"
+      XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     )
 
   else()

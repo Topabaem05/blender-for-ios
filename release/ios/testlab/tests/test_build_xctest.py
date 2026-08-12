@@ -25,6 +25,36 @@ class BuildXCTestTests(unittest.TestCase):
                     "CFBundleShortVersionString": "5.1.2",
                     "MinimumOSVersion": "16.6",
                     "UIDeviceFamily": [1, 2],
+                    "UILaunchStoryboardName": "Main",
+                    "UIMainStoryboardFile": "Main",
+                }
+            )
+        )
+        (app / "Assets.car").write_bytes(b"compiled assets")
+        (app / "Main.storyboardc").mkdir()
+        (app / "PrivacyInfo.xcprivacy").write_bytes(
+            plistlib.dumps(
+                {
+                    "NSPrivacyTracking": False,
+                    "NSPrivacyTrackingDomains": [],
+                    "NSPrivacyCollectedDataTypes": [],
+                    "NSPrivacyAccessedAPITypes": [
+                        {
+                            "NSPrivacyAccessedAPIType":
+                                "NSPrivacyAccessedAPICategoryFileTimestamp",
+                            "NSPrivacyAccessedAPITypeReasons": ["C617.1", "3B52.1"],
+                        },
+                        {
+                            "NSPrivacyAccessedAPIType":
+                                "NSPrivacyAccessedAPICategorySystemBootTime",
+                            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"],
+                        },
+                        {
+                            "NSPrivacyAccessedAPIType":
+                                "NSPrivacyAccessedAPICategoryDiskSpace",
+                            "NSPrivacyAccessedAPITypeReasons": ["E174.1"],
+                        },
+                    ],
                 }
             )
         )
@@ -39,6 +69,14 @@ class BuildXCTestTests(unittest.TestCase):
             asset = app / relative_path
             asset.parent.mkdir(parents=True, exist_ok=True)
             asset.write_text("runtime asset")
+        sysconfig = app / "Assets" / "5.1" / "python" / "lib" / "python3.13" / (
+            "_sysconfigdata__ios_arm64-iphoneos.py"
+        )
+        sysconfig.parent.mkdir(parents=True, exist_ok=True)
+        sysconfig.write_text(
+            "build_time_vars = {'MACHDEP': 'ios', "
+            "'EXT_SUFFIX': '.cpython-313-iphoneos.so'}\n"
+        )
         return app
 
     def create_build_products(self, build_dir):

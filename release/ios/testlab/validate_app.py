@@ -1,6 +1,8 @@
 import argparse
+import ast
 import json
 import pathlib
+import plistlib
 import subprocess
 
 
@@ -15,6 +17,11 @@ XCTEST_SUPPORT_NAMES = {
     "XCUnit.framework",
     "libXCTestBundleInject.dylib",
     "libXCTestSwiftSupport.dylib",
+}
+EXPECTED_PRIVACY_API_REASONS = {
+    "NSPrivacyAccessedAPICategoryFileTimestamp": ["C617.1", "3B52.1"],
+    "NSPrivacyAccessedAPICategorySystemBootTime": ["35F9.1"],
+    "NSPrivacyAccessedAPICategoryDiskSpace": ["E174.1"],
 }
 
 
@@ -93,8 +100,117 @@ def is_xctest_support(relative_path):
     )
 
 
+def validate_python_runtime(app_dir):
+    sysconfig_files = sorted(
+        app_dir.glob("Assets/*/python/lib/python*/_sysconfigdata__*.py")
+    )
+    if not sysconfig_files:
+        raise ValueError("Blender.app is missing Python sysconfig file")
+    if len(sysconfig_files) != 1:
+        raise ValueError("Blender.app must contain exactly one Python sysconfig file")
+
+    source = sysconfig_files[0].read_text(encoding="utf-8")
+    assignment = ast.parse(source).body[0]
+    if not isinstance(assignment, ast.Assign) or not isinstance(assignment.value, ast.Dict):
+        raise ValueError("Python sysconfig file has an unexpected format")
+    config = ast.literal_eval(assignment.value)
+    if config.get("MACHDEP") != "ios":
+        raise ValueError("Python runtime is not configured for iOS")
+
+    extension_suffix = config.get("EXT_SUFFIX")
+    if not isinstance(extension_suffix, str) or not extension_suffix.endswith(".so"):
+        raise ValueError("Python sysconfig does not define an extension suffix")
+    marker_suffix = extension_suffix[:-3] + ".fwork"
+    python_root = sysconfig_files[0].parent
+    framework_targets = []
+    for marker in python_root.rglob("*.fwork"):
+        if not marker.name.endswith(marker_suffix):
+            raise ValueError(
+                f"Python framework marker has wrong suffix: {marker.relative_to(app_dir)}"
+            )
+        target_text = marker.read_text(encoding="utf-8").strip()
+        target_relative = pathlib.Path(target_text)
+        if (
+            target_relative.is_absolute()
+            or len(target_relative.parts) != 3
+            or target_relative.parts[0] != "Frameworks"
+            or not target_relative.parts[1].endswith(".framework")
+        ):
+            raise ValueError(
+                f"Python framework marker has invalid target: {marker.relative_to(app_dir)}"
+            )
+        target = app_dir / target_relative
+        if not target.is_file():
+            raise ValueError(
+                f"Python framework marker references missing framework executable: "
+                f"{marker.relative_to(app_dir)}"
+            )
+        origin = target.parent / f"{target.name}.origin"
+        if not origin.is_file():
+            raise ValueError(
+                f"Python framework marker is missing origin backlink: "
+                f"{marker.relative_to(app_dir)}"
+            )
+        if origin.read_text(encoding="utf-8").strip() != marker.relative_to(app_dir).as_posix():
+            raise ValueError(
+                f"Python framework marker origin backlink mismatch: "
+                f"{marker.relative_to(app_dir)}"
+            )
+        framework_targets.append(target)
+    return framework_targets
+
+
+def validate_privacy_manifest(path, label):
+    if not path.is_file():
+        raise ValueError(f"missing {label} privacy manifest")
+    with path.open("rb") as manifest_file:
+        manifest = plistlib.load(manifest_file)
+    api_reasons = {
+        item.get("NSPrivacyAccessedAPIType"): item.get("NSPrivacyAccessedAPITypeReasons")
+        for item in manifest.get("NSPrivacyAccessedAPITypes", [])
+    }
+    if (
+        manifest.get("NSPrivacyTracking") is not False
+        or manifest.get("NSPrivacyTrackingDomains") != []
+        or manifest.get("NSPrivacyCollectedDataTypes") != []
+        or api_reasons != EXPECTED_PRIVACY_API_REASONS
+    ):
+        raise ValueError(f"invalid {label} privacy manifest")
+
+
+def validate_privacy_manifests(app_dir):
+    validate_privacy_manifest(app_dir / "PrivacyInfo.xcprivacy", "app")
+    python_framework = app_dir / "Frameworks" / "Python.framework"
+    if (python_framework / "Python").is_file():
+        validate_privacy_manifest(
+            python_framework / "PrivacyInfo.xcprivacy",
+            "Python framework",
+        )
+
+
+def validate_compiled_resources(app_dir):
+    info_path = app_dir / "Info.plist"
+    if not info_path.is_file():
+        raise ValueError("missing app Info.plist")
+    with info_path.open("rb") as info_file:
+        info = plistlib.load(info_file)
+
+    if not (app_dir / "Assets.car").is_file():
+        raise ValueError("missing compiled asset catalog")
+    for key, label in (
+        ("UILaunchStoryboardName", "launch"),
+        ("UIMainStoryboardFile", "main"),
+    ):
+        name = info.get(key)
+        if not isinstance(name, str) or not (app_dir / f"{name}.storyboardc").exists():
+            raise ValueError(f"missing compiled {label} storyboard")
+
+
 def validate_runtime(app_dir, command_runner=run_command, *, allow_xctest_support=False):
     app_dir = pathlib.Path(app_dir)
+    validate_compiled_resources(app_dir)
+    validate_privacy_manifests(app_dir)
+    python_framework_targets = validate_python_runtime(app_dir)
     executable = app_dir / "Blender"
     if not executable.is_file():
         raise ValueError("missing Blender executable")
@@ -110,6 +226,12 @@ def validate_runtime(app_dir, command_runner=run_command, *, allow_xctest_suppor
 
     executable_rpaths = rpaths(command_runner(["otool", "-l", str(executable)]))
     errors = []
+    for target in python_framework_targets:
+        if target not in loadable_machos:
+            errors.append(
+                f"Python framework executable is not a loadable Mach-O file: "
+                f"{target.relative_to(app_dir)}"
+            )
     for owner in loadable_machos:
         relative_owner = owner.relative_to(app_dir)
         if allow_xctest_support and is_xctest_support(relative_owner):

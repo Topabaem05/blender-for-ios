@@ -79,10 +79,38 @@ The signed universal editor and physical-iPhone workflow are GREEN.
 - GREEN before device install: CMake staging converted 19 native modules with zero remaining Python
   `.so` files; validator checked 44 loadable Mach-O files, deep signing and provisioning matched,
   and all 383 Python symbols required by the extension frameworks are exported by the app.
-- External connection gate: one CoreDevice install attempt found the paired iPhone unavailable, and
+- Earlier connection gate: one CoreDevice install attempt found the paired iPhone unavailable, and
   an independent Xcode discovery refresh returned the same device-preparation state. No second
   install or device reboot was attempted.
 
-Current loop: restore Xcode physical-device availability, run the signed framework regression,
-then cover third-party Files-provider permission and remaining platform gaps (Cycles, UIKit scene
-lifecycle, and physical-iPad coverage).
+The current signed device and physical-iPhone checkpoint are GREEN.
+
+- `build-for-testing` completed 4,250 compile units; the staged signed app passed validation for 55
+  loadable Mach-O files, and testlab passed 54/54 checks.
+- The signed staging app installed on the connected iPhone and remained alive for a 30-second cold
+  launch. Smoke QA edited the scene, imported NumPy, saved a `.blend`, and rendered with Workbench;
+  relaunch QA reopened the saved state.
+- Python 3.13, `bpy`, NumPy, a Documents `.py` script, and a bundled add-on passed. Runtime Blender
+  Extension management remained blocked by the iOS policy.
+- Limited Workbench, Eevee, and Cycles render checks passed on the phone.
+- The supplied 141,369,967-byte `.blend` opened with autoexec disabled, saved, exported and
+  reimported OBJ/PLY/STL, and reopened after relaunch with autoexec still disabled.
+- Background/foreground preserved the same process, and the iOS payload callback opened its file.
+- RED: the physical software-keyboard path crashed in `block_to_window_fl` while converting a
+  button block with a stale region.
+- GREEN: `interface_handlers.cc` now uses the active button data's region. On the connected iPhone,
+  the native text field appeared and accepted Unicode text, Delete, and Done without crashing.
+- GREEN: physical rotation, viewport tap, and Shift/Option/Command/Control modifier UI regressions
+  each reported one passing test and zero failing tests.
+- GREEN: a new signed arm64 staging app passed validation for 55 loadable Mach-O files, deep code
+  signing, installation, and the complete 54/54 testlab run.
+- RED then GREEN: mutation cases showed that `.fwork` presence alone could not prove a usable native
+  module. Validation now follows each marker to its framework executable, requires the matching
+  `.origin` redirect, and confirms the executable is loadable Mach-O.
+- GREEN: host-authorized strict and deep code-signing validation passed. The sandbox trust failure
+  was isolated as an execution-environment restriction rather than a package-signing failure.
+
+Current loop: expose the software-keyboard dialog/probe notification after four locked attempts and
+freshly run the new iPad Simulator cases. No new app crash was observed in those locked attempts.
+App Store P0 remains gated by the release-profile user-code restriction, third-party open-in-place,
+Blender trademark permission, and GPL distribution review.

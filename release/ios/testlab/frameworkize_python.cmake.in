@@ -42,8 +42,8 @@ else()
 endif()
 
 file(GLOB _python_origins "${_app_dir}/Frameworks/*.framework/*.origin")
-foreach(_origin IN LISTS _python_origins)
-  get_filename_component(_framework "${_origin}" DIRECTORY)
+file(GLOB _python_frameworks "${_app_dir}/Frameworks/*.framework")
+foreach(_framework IN LISTS _python_frameworks)
   execute_process(
     COMMAND codesign
       --force

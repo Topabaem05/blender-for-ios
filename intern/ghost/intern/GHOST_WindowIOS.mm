@@ -1499,7 +1499,7 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
     [ghost_rootWindow retain];
     /* Ensure fullscreen. */
     CGRect rect = [UIScreen mainScreen].bounds;
-    rootWindow.frame = rect;
+    ghost_rootWindow.frame = rect;
   }
   else {
     /* Init window at specified size. */

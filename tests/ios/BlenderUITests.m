@@ -145,4 +145,89 @@
   XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
 }
 
+- (void)testSoftwareKeyboardCommitsTextToBlender
+{
+  XCUIApplication *app = [[XCUIApplication alloc] init];
+  NSString *completedName = @"org.blender.ios.software-keyboard.completed";
+  XCTDarwinNotificationExpectation *completed = [[XCTDarwinNotificationExpectation alloc]
+      initWithNotificationName:completedName];
+  NSString *probe =
+      @"import bpy,ctypes;S=lambda *v:bytes(v).decode();"
+       "n=ctypes.CDLL(None).notify_post;"
+       "K=S(105,111,115,95,115,111,102,116,119,97,114,101,95,107,101,121,98,111,97,114,"
+       "100,95,112,114,111,98,101);"
+       "N=S(111,114,103,46,98,108,101,110,100,101,114,46,105,111,115,46,115,111,102,116,"
+       "119,97,114,101,45,107,101,121,98,111,97,114,100,46,99,111,109,112,108,101,116,"
+       "101,100).encode();"
+       "E=S(73,79,83,32,83,111,102,116,119,97,114,101,32,75,101,121,98,111,97,114,100,"
+       "32,80,114,111,98,101);"
+       "f=lambda s,c:(c.scene.__setitem__(K,s.value),n(N) if s.value==E else 0,"
+       "{S(70,73,78,73,83,72,69,68)})[2];"
+       "i=lambda s,c,e:c.window_manager.invoke_props_dialog(s);"
+       "P=type(S(73,79,83,95,79,84,95,115,111,102,116,119,97,114,101,95,107,101,121,98,"
+       "111,97,114,100,95,112,114,111,98,101),(bpy.types.Operator,),{"
+       "S(98,108,95,105,100,110,97,109,101):S(119,109,46,105,111,115,95,115,111,102,116,"
+       "119,97,114,101,95,107,101,121,98,111,97,114,100,95,112,114,111,98,101),"
+       "S(98,108,95,108,97,98,101,108):S(73,79,83,32,83,111,102,116,119,97,114,101,32,"
+       "75,101,121,98,111,97,114,100,32,80,114,111,98,101),"
+       "S(95,95,97,110,110,111,116,97,116,105,111,110,115,95,95):{"
+       "S(118,97,108,117,101):bpy.props.StringProperty(name=S(84,101,120,116))},"
+       "S(105,110,118,111,107,101):i,"
+       "S(101,120,101,99,117,116,101):f});"
+       "bpy.utils.register_class(P);"
+       "bpy.app.timers.register(lambda:(bpy.ops.wm.ios_software_keyboard_probe("
+       "S(73,78,86,79,75,69,95,68,69,70,65,85,76,84)),None)[1],first_interval=1.0)";
+  app.launchArguments = @[ @"--python-expr", probe ];
+
+  [app launch];
+  XCTAssertTrue([app waitForState:XCUIApplicationStateRunningForeground timeout:30.0]);
+
+  XCUIElement *textField = app.textFields.firstMatch;
+  XCTAssertTrue([textField waitForExistenceWithTimeout:30.0]);
+  [textField tap];
+  [textField typeText:@"IOS Software Keyboard Probe한"];
+  [textField typeKey:XCUIKeyboardKeyDelete modifierFlags:XCUIKeyModifierNone];
+
+  NSPredicate *enabled = [NSPredicate predicateWithFormat:@"enabled == YES"];
+  XCUIElement *doneButton = [[app.toolbars.buttons matchingPredicate:enabled]
+      elementBoundByIndex:0];
+  XCTAssertTrue([doneButton waitForExistenceWithTimeout:10.0]);
+  [doneButton tap];
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ completed ] timeout:10.0],
+                 XCTWaiterResultCompleted);
+
+  XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:[app screenshot]];
+  attachment.name = @"Blender after software keyboard text commit";
+  attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+  [self addAttachment:attachment];
+  XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
+}
+
+- (void)testEditorSurvivesPortraitAndLandscapeRotation
+{
+  XCUIApplication *app = [[XCUIApplication alloc] init];
+  [app launch];
+  XCTAssertTrue([app waitForState:XCUIApplicationStateRunningForeground timeout:30.0]);
+
+  XCUIDevice.sharedDevice.orientation = UIDeviceOrientationPortrait;
+  [NSThread sleepForTimeInterval:2.0];
+  XCTAssertEqual(XCUIDevice.sharedDevice.orientation, UIDeviceOrientationPortrait);
+  XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
+
+  XCTAttachment *portrait = [XCTAttachment attachmentWithScreenshot:[app screenshot]];
+  portrait.name = @"Blender editor in portrait";
+  portrait.lifetime = XCTAttachmentLifetimeKeepAlways;
+  [self addAttachment:portrait];
+
+  XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeRight;
+  [NSThread sleepForTimeInterval:2.0];
+  XCTAssertEqual(XCUIDevice.sharedDevice.orientation, UIDeviceOrientationLandscapeRight);
+  XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
+
+  XCTAttachment *landscape = [XCTAttachment attachmentWithScreenshot:[app screenshot]];
+  landscape.name = @"Blender editor after rotation to landscape";
+  landscape.lifetime = XCTAttachmentLifetimeKeepAlways;
+  [self addAttachment:landscape];
+}
+
 @end

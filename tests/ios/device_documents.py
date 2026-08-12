@@ -78,6 +78,7 @@ def verify_saved_file():
 def verify_source_file():
     global export_bytes, saved_bytes, source_stats
     try:
+        assert not bpy.context.preferences.filepaths.use_scripts_auto_execute
         source_stats = {
             "scenes": len(bpy.data.scenes),
             "objects": len(bpy.data.objects),
@@ -116,6 +117,7 @@ def verify_source_file():
 def open_source_file():
     try:
         os.makedirs(output_dir, exist_ok=True)
+        assert not bpy.context.preferences.filepaths.use_scripts_auto_execute
         input_realpath = os.path.realpath(input_path)
         documents_realpath = os.path.realpath(documents_dir)
         assert os.path.commonpath((input_realpath, documents_realpath)) == documents_realpath
