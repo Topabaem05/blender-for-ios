@@ -15,6 +15,7 @@
 #include "mtl_framebuffer.hh"
 #include "mtl_texture.hh"
 #import <Availability.h>
+#include <TargetConditionals.h>
 
 namespace blender::gpu {
 
@@ -36,6 +37,7 @@ MTLFrameBuffer::MTLFrameBuffer(MTLContext *ctx, const char *name) : FrameBuffer(
 
   for (int i = 0; i < GPU_FB_MAX_COLOR_ATTACHMENT; i++) {
     mtl_color_attachments_[i].used = false;
+    detached_subpass_attachments_[i].used = false;
   }
   mtl_depth_attachment_.used = false;
   mtl_stencil_attachment_.used = false;
@@ -84,6 +86,11 @@ MTLFrameBuffer::~MTLFrameBuffer()
       [colour_attachment_descriptors_[i] release];
       colour_attachment_descriptors_[i] = nil;
     }
+  }
+
+  if (attachmentless_dummy_texture_ != nil) {
+    [attachmentless_dummy_texture_ release];
+    attachmentless_dummy_texture_ = nil;
   }
 
   /* Remove attachments - release FB texture references. */
@@ -485,11 +492,30 @@ void MTLFrameBuffer::subpass_transition_impl(const GPUAttachmentState /*depth_at
      * NOTE: Follows behavior of gl_framebuffer. However, shaders utilizing subpass_in will
      * need to avoid bind-point collisions for image/texture resources. */
     for (int i : color_attachment_states.index_range()) {
-      GPUAttachmentType type = GPU_FB_COLOR_ATTACHMENT0 + i;
-      gpu::Texture *attach_tex = this->attachments_[type].tex;
-      if (color_attachment_states[i] == GPU_ATTACHMENT_READ) {
-        GPU_texture_image_bind(attach_tex, i);
+#if TARGET_OS_SIMULATOR
+      MTLAttachment &detached_attachment = detached_subpass_attachments_[i];
+      if (color_attachment_states[i] == GPU_ATTACHMENT_WRITE) {
+        if (detached_attachment.used) {
+          GPUAttachment &attachment = attachments_[GPU_FB_COLOR_ATTACHMENT0 + i];
+          this->add_color_attachment(
+              static_cast<gpu::MTLTexture *>(attachment.tex), i, attachment.mip, attachment.layer);
+          mtl_color_attachments_[i] = detached_attachment;
+          detached_attachment.used = false;
+          this->mark_dirty();
+        }
       }
+      else if (color_attachment_states[i] == GPU_ATTACHMENT_READ && mtl_color_attachments_[i].used)
+      {
+        detached_attachment = mtl_color_attachments_[i];
+        GPU_texture_image_bind(detached_attachment.texture, i);
+        this->remove_color_attachment(i);
+      }
+#else
+      GPUAttachment &attachment = attachments_[GPU_FB_COLOR_ATTACHMENT0 + i];
+      if (color_attachment_states[i] == GPU_ATTACHMENT_READ) {
+        GPU_texture_image_bind(attachment.tex, i);
+      }
+#endif
     }
   }
 }
@@ -1522,6 +1548,31 @@ bool MTLFrameBuffer::validate_render_pass()
   return true;
 }
 
+id<MTLTexture> MTLFrameBuffer::ensure_attachmentless_dummy_texture()
+{
+  BLI_assert(width_ > 0 && height_ > 0);
+  if (attachmentless_dummy_texture_ != nil && (attachmentless_dummy_texture_.width != width_ ||
+                                               attachmentless_dummy_texture_.height != height_))
+  {
+    [attachmentless_dummy_texture_ release];
+    attachmentless_dummy_texture_ = nil;
+  }
+
+  if (attachmentless_dummy_texture_ == nil) {
+    MTLTextureDescriptor *descriptor = [MTLTextureDescriptor
+        texture2DDescriptorWithPixelFormat:MTLPixelFormatR8Unorm
+                                     width:width_
+                                    height:height_
+                                 mipmapped:NO];
+    descriptor.usage = MTLTextureUsageRenderTarget;
+    descriptor.storageMode = MTLStorageModePrivate;
+    attachmentless_dummy_texture_ = [context_->device newTextureWithDescriptor:descriptor];
+    attachmentless_dummy_texture_.label = @"Blender attachmentless raster target";
+  }
+  BLI_assert(attachmentless_dummy_texture_ != nil);
+  return attachmentless_dummy_texture_;
+}
+
 MTLLoadAction mtl_load_action_from_gpu(GPULoadOp action)
 {
   return (action == GPU_LOADACTION_LOAD) ?
@@ -1813,13 +1864,26 @@ MTLRenderPassDescriptor *MTLFrameBuffer::bake_render_pass_descriptor(bool load_c
     }
 
     /* Attachmentless render support. */
-    int total_num_attachments = colour_attachment_count_ + (mtl_depth_attachment_.used ? 1 : 0) +
-                                (mtl_stencil_attachment_.used ? 1 : 0);
+    const int total_num_attachments = colour_attachment_count_ +
+                                      (mtl_depth_attachment_.used ? 1 : 0) +
+                                      (mtl_stencil_attachment_.used ? 1 : 0);
     if (total_num_attachments == 0) {
       BLI_assert(width_ > 0 && height_ > 0);
+#if TARGET_OS_SIMULATOR
+      MTLRenderPassColorAttachmentDescriptor *attachment = colour_attachment_descriptors_[0];
+      attachment.texture = this->ensure_attachmentless_dummy_texture();
+      attachment.loadAction = MTLLoadActionDontCare;
+      attachment.storeAction = MTLStoreActionDontCare;
+      attachment.level = 0;
+      attachment.slice = 0;
+      attachment.depthPlane = 0;
+      [framebuffer_descriptor_[descriptor_config].colorAttachments setObject:attachment
+                                                          atIndexedSubscript:0];
+#else
       framebuffer_descriptor_[descriptor_config].renderTargetWidth = width_;
       framebuffer_descriptor_[descriptor_config].renderTargetHeight = height_;
       framebuffer_descriptor_[descriptor_config].defaultRasterSampleCount = 1;
+#endif
     }
 
     descriptor_dirty_[descriptor_config] = false;

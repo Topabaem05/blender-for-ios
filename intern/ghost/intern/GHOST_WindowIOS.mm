@@ -994,12 +994,12 @@ static uint8_t ghostModifierMaskForHIDUsage(const uint32_t usage)
 
   toolbar_done_editing_item = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemDone
-                           target:nil
+                           target:self
                            action:@selector(handleDoneButton)];
 
   toolbar_cancel_editing_item = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                           target:nil
+                           target:self
                            action:@selector(handleCancelButton)];
 
   /* Prevents editing of tip and live text fields. */
@@ -1459,6 +1459,16 @@ static uint8_t ghostModifierMaskForHIDUsage(const uint32_t usage)
   return YES;
 }
 
+- (BOOL)shouldAutorotate
+{
+  return YES;
+}
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations
+{
+  return UIInterfaceOrientationMaskAll;
+}
+
 @end
 
 GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
@@ -1492,8 +1502,14 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
   GHOST_ASSERT(app_delegate, "App not valid");
 
   GHOSTUIWindow *ghost_rootWindow = nullptr;
+  UIWindowScene *window_scene = GHOST_IOSActiveWindowScene();
 
-  if (full_screen_) {
+  if (window_scene != nil) {
+    ghost_rootWindow = [[GHOSTUIWindow alloc] initWithWindowScene:window_scene];
+    [ghost_rootWindow retain];
+    ghost_rootWindow.frame = window_scene.coordinateSpace.bounds;
+  }
+  else if (full_screen_) {
     /* Init window at native res. */
     ghost_rootWindow = [[GHOSTUIWindow alloc] init];
     [ghost_rootWindow retain];
@@ -1512,7 +1528,7 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
   rootWindow = (UIWindow *)ghost_rootWindow;
 
   [ghost_rootWindow setSystemAndWindowIOS:system_ios_ windowIOS:this];
-  rootWindow.windowLevel = UIWindowLevelAlert;
+  rootWindow.windowLevel = parent_window_ ? UIWindowLevelAlert : UIWindowLevelNormal;
 
   GHOST_ASSERT(rootWindow, "UIWindow not valid");
   uiview_controller_ = [[[GHOST_IOSViewController alloc] initWithMetalKitView:metal_view_] retain];
@@ -1529,6 +1545,9 @@ GHOST_WindowIOS::GHOST_WindowIOS(GHOST_SystemIOS *system_ios,
     uiview_controller_.modalPresentationStyle = UIModalPresentationPageSheet;
   }
   rootWindow.rootViewController = uiview_controller_;
+  if (parent_window_ == nullptr) {
+    GHOST_IOSSetSceneWindow(rootWindow);
+  }
 
   /* Create UIView */
   GHOST_ASSERT(width > 0 && height > 0, "invalid wh");
@@ -1579,6 +1598,10 @@ GHOST_WindowIOS::~GHOST_WindowIOS()
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
   releaseNativeHandles();
+
+  if (parent_window_ == nullptr) {
+    GHOST_IOSSetSceneWindow(nil);
+  }
 
   /* Restore application control and display to parent window. */
   if (parent_window_) {

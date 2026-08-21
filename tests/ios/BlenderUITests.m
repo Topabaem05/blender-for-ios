@@ -15,8 +15,11 @@
 {
   XCUIApplication *app = [[XCUIApplication alloc] init];
   NSString *readyNotification = @"org.blender.ios.ui-test.ready";
+  NSString *selectedNotification = @"org.blender.ios.ui-test.selected";
   XCTDarwinNotificationExpectation *ready =
       [[XCTDarwinNotificationExpectation alloc] initWithNotificationName:readyNotification];
+  XCTDarwinNotificationExpectation *selected = [[XCTDarwinNotificationExpectation alloc]
+      initWithNotificationName:selectedNotification];
   NSString *probe =
       @"import bpy,ctypes,json,os,pathlib;S=lambda *v:bytes(v).decode();"
        "d=os.path.expanduser(S(126,47,68,111,99,117,109,101,110,116,115,47,66,108,101,110,"
@@ -24,6 +27,8 @@
        "c=bpy.data.objects[S(67,117,98,101)];c.location=(0,0,0);c.select_set(False);"
        "bpy.context.view_layer.objects.active=None;"
        "n=ctypes.CDLL(None).notify_post;"
+       "V=S(111,114,103,46,98,108,101,110,100,101,114,46,105,111,115,46,117,105,45,116,101,"
+       "115,116,46,115,101,108,101,99,116,101,100).encode();s=[0];"
        "bpy.app.timers.register(lambda:(n(S(111,114,103,46,98,108,101,110,100,101,114,46,105,"
        "111,115,46,117,105,45,116,101,115,116,46,114,101,97,100,121).encode()),None)[1],"
        "first_interval=0.25);"
@@ -33,7 +38,8 @@
        "bpy.app.timers.register(lambda:(pathlib.Path(p).write_text(json.dumps({"
        "S(115,116,97,116,117,115):S(112,97,115,115,101,100) if c.select_get() else "
        "S(119,97,105,116,105,110,103),S(114,117,110,95,105,100):r,"
-       "S(115,101,108,101,99,116,101,100):c.select_get()})),0.25)[1],"
+       "S(115,101,108,101,99,116,101,100):c.select_get()})),"
+       "(n(V),s.__setitem__(0,1)) if c.select_get() and s[0]==0 else 0,.25)[2],"
        "first_interval=0.25,persistent=True)";
   app.launchEnvironment = @{ @"BLENDER_IOS_QA_RUN_ID" : @"iphone-touch-1" };
   app.launchArguments = @[ @"--python-expr", probe ];
@@ -42,10 +48,10 @@
   XCTAssertTrue([app waitForState:XCUIApplicationStateRunningForeground timeout:30.0]);
   XCTAssertEqual([XCTWaiter waitForExpectations:@[ ready ] timeout:30.0],
                  XCTWaiterResultCompleted);
-  [NSThread sleepForTimeInterval:1.0];
 
   [[app coordinateWithNormalizedOffset:CGVectorMake(0.42, 0.47)] tap];
-  [NSThread sleepForTimeInterval:4.0];
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ selected ] timeout:10.0],
+                 XCTWaiterResultCompleted);
 
   XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:[app screenshot]];
   attachment.name = @"Blender after viewport tap";
@@ -148,7 +154,10 @@
 - (void)testSoftwareKeyboardCommitsTextToBlender
 {
   XCUIApplication *app = [[XCUIApplication alloc] init];
+  NSString *readyName = @"org.blender.ios.software-keyboard.ready";
   NSString *completedName = @"org.blender.ios.software-keyboard.completed";
+  XCTDarwinNotificationExpectation *ready = [[XCTDarwinNotificationExpectation alloc]
+      initWithNotificationName:readyName];
   XCTDarwinNotificationExpectation *completed = [[XCTDarwinNotificationExpectation alloc]
       initWithNotificationName:completedName];
   NSString *probe =
@@ -159,11 +168,15 @@
        "N=S(111,114,103,46,98,108,101,110,100,101,114,46,105,111,115,46,115,111,102,116,"
        "119,97,114,101,45,107,101,121,98,111,97,114,100,46,99,111,109,112,108,101,116,"
        "101,100).encode();"
+       "R=S(111,114,103,46,98,108,101,110,100,101,114,46,105,111,115,46,115,111,102,116,"
+       "119,97,114,101,45,107,101,121,98,111,97,114,100,46,114,101,97,100,121).encode();"
        "E=S(73,79,83,32,83,111,102,116,119,97,114,101,32,75,101,121,98,111,97,114,100,"
        "32,80,114,111,98,101);"
-       "f=lambda s,c:(c.scene.__setitem__(K,s.value),n(N) if s.value==E else 0,"
-       "{S(70,73,78,73,83,72,69,68)})[2];"
-       "i=lambda s,c,e:c.window_manager.invoke_props_dialog(s);"
+       "u=lambda s,c:(c.scene.__setitem__(K,s.value),n(N) if s.value==E else 0,None)[2];"
+       "f=lambda s,c:{S(70,73,78,73,83,72,69,68)};"
+       "i=lambda s,c,e:(c.window.cursor_warp(c.window.width//2,c.window.height//2),"
+       "c.window_manager.invoke_props_dialog(s),"
+       "bpy.app.timers.register(lambda:(n(R),None)[1],first_interval=.5))[1];"
        "P=type(S(73,79,83,95,79,84,95,115,111,102,116,119,97,114,101,95,107,101,121,98,"
        "111,97,114,100,95,112,114,111,98,101),(bpy.types.Operator,),{"
        "S(98,108,95,105,100,110,97,109,101):S(119,109,46,105,111,115,95,115,111,102,116,"
@@ -171,7 +184,7 @@
        "S(98,108,95,108,97,98,101,108):S(73,79,83,32,83,111,102,116,119,97,114,101,32,"
        "75,101,121,98,111,97,114,100,32,80,114,111,98,101),"
        "S(95,95,97,110,110,111,116,97,116,105,111,110,115,95,95):{"
-       "S(118,97,108,117,101):bpy.props.StringProperty(name=S(84,101,120,116))},"
+       "S(118,97,108,117,101):bpy.props.StringProperty(name=S(84,101,120,116),update=u)},"
        "S(105,110,118,111,107,101):i,"
        "S(101,120,101,99,117,116,101):f});"
        "bpy.utils.register_class(P);"
@@ -181,9 +194,13 @@
 
   [app launch];
   XCTAssertTrue([app waitForState:XCUIApplicationStateRunningForeground timeout:30.0]);
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ ready ] timeout:60.0],
+                 XCTWaiterResultCompleted);
+
+  [[app coordinateWithNormalizedOffset:CGVectorMake(0.51, 0.47)] tap];
 
   XCUIElement *textField = app.textFields.firstMatch;
-  XCTAssertTrue([textField waitForExistenceWithTimeout:30.0]);
+  XCTAssertTrue([textField waitForExistenceWithTimeout:15.0]);
   [textField tap];
   [textField typeText:@"IOS Software Keyboard Probe한"];
   [textField typeKey:XCUIKeyboardKeyDelete modifierFlags:XCUIKeyModifierNone];
@@ -206,11 +223,35 @@
 - (void)testEditorSurvivesPortraitAndLandscapeRotation
 {
   XCUIApplication *app = [[XCUIApplication alloc] init];
+  NSString *readyName = @"org.blender.ios.rotation.ready";
+  XCTDarwinNotificationExpectation *ready = [[XCTDarwinNotificationExpectation alloc]
+      initWithNotificationName:readyName];
+  NSString *probe =
+      @"import bpy,ctypes;S=lambda *v:bytes(v).decode();"
+       "bpy.app.timers.register(lambda:(ctypes.CDLL(None).notify_post("
+       "S(111,114,103,46,98,108,101,110,100,101,114,46,105,111,115,46,114,111,116,97,"
+       "116,105,111,110,46,114,101,97,100,121).encode()),None)[1],first_interval=.25)";
+  app.launchArguments = @[ @"--python-expr", probe ];
   [app launch];
   XCTAssertTrue([app waitForState:XCUIApplicationStateRunningForeground timeout:30.0]);
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ ready ] timeout:90.0],
+                 XCTWaiterResultCompleted);
+  XCUIElement *window = app.windows.firstMatch;
+  XCTAssertTrue([window waitForExistenceWithTimeout:10.0]);
 
   XCUIDevice.sharedDevice.orientation = UIDeviceOrientationPortrait;
-  [NSThread sleepForTimeInterval:2.0];
+  NSPredicate *portraitFramePredicate = [NSPredicate
+      predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary<NSString *, id> *bindings) {
+        (void)evaluatedObject;
+        (void)bindings;
+        CGRect frame = window.frame;
+        return frame.size.height > frame.size.width;
+      }];
+  XCTNSPredicateExpectation *portraitFrame = [[XCTNSPredicateExpectation alloc]
+      initWithPredicate:portraitFramePredicate
+                 object:window];
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ portraitFrame ] timeout:10.0],
+                 XCTWaiterResultCompleted);
   XCTAssertEqual(XCUIDevice.sharedDevice.orientation, UIDeviceOrientationPortrait);
   XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
 
@@ -220,7 +261,18 @@
   [self addAttachment:portrait];
 
   XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeRight;
-  [NSThread sleepForTimeInterval:2.0];
+  NSPredicate *landscapeFramePredicate = [NSPredicate
+      predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary<NSString *, id> *bindings) {
+        (void)evaluatedObject;
+        (void)bindings;
+        CGRect frame = window.frame;
+        return frame.size.width > frame.size.height;
+      }];
+  XCTNSPredicateExpectation *landscapeFrame = [[XCTNSPredicateExpectation alloc]
+      initWithPredicate:landscapeFramePredicate
+                 object:window];
+  XCTAssertEqual([XCTWaiter waitForExpectations:@[ landscapeFrame ] timeout:10.0],
+                 XCTWaiterResultCompleted);
   XCTAssertEqual(XCUIDevice.sharedDevice.orientation, UIDeviceOrientationLandscapeRight);
   XCTAssertEqual(app.state, XCUIApplicationStateRunningForeground);
 

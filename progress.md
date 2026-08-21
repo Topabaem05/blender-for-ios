@@ -86,7 +86,7 @@ The signed universal editor and physical-iPhone workflow are GREEN.
 The current signed device and physical-iPhone checkpoint are GREEN.
 
 - `build-for-testing` completed 4,250 compile units; the staged signed app passed validation for 55
-  loadable Mach-O files, and testlab passed 54/54 checks.
+  loadable Mach-O files. The current host testlab passed 61/61 checks.
 - The signed staging app installed on the connected iPhone and remained alive for a 30-second cold
   launch. Smoke QA edited the scene, imported NumPy, saved a `.blend`, and rendered with Workbench;
   relaunch QA reopened the saved state.
@@ -110,7 +110,27 @@ The current signed device and physical-iPhone checkpoint are GREEN.
 - GREEN: host-authorized strict and deep code-signing validation passed. The sandbox trust failure
   was isolated as an execution-environment restriction rather than a package-signing failure.
 
-Current loop: expose the software-keyboard dialog/probe notification after four locked attempts and
-freshly run the new iPad Simulator cases. No new app crash was observed in those locked attempts.
+The current iPad Simulator checkpoint is mixed.
+
+- GREEN: FTL passed 10/10; viewport and Apple modifier-shortcut UI tests each passed 1/1.
+- GREEN: smoke, reopen, lifecycle, Python, and bundled add-on checks passed.
+- GREEN: the supplied Documents file opened as 1 scene with 343 objects and 202 meshes, saved
+  141,304,005 bytes, exported OBJ 930 bytes, PLY 628 bytes, and STL 684 bytes, produced an
+  871,147-byte screenshot, and kept autoexec disabled.
+- GREEN: the readiness-synchronized application URL callback opened a fresh 97,076-byte fixture,
+  kept autoexec disabled, and produced an 826,614-byte screenshot.
+- RED then GREEN: an old process could exit after the next launch and rewrite the report with a
+  mismatched run. The runner now waits within its timeout for the current run report. Host testlab
+  passed 61/61; artifacts are under `staging/sim-probes`.
+- BLOCKED: the render probe first timed out, then stopped with Metal `SIGABRT` and
+  `No valid pixelFormats set`. It was not repeated.
+- LOCKED: the software-keyboard end-to-end notification remained unavailable after three actual
+  approaches. The existing physical product crash fix remains valid.
+- BLOCKED: rotation failed all three approaches: foreground-scene attachment,
+  delegate/connected-scene attachment, and `initWithWindowScene`. The GHOST rotation diff was
+  rolled back cleanly; the broader SceneDelegate/`UIApplicationSceneManifest` choice is pending.
+
+Current loop: resolve the Simulator Metal render boundary and choose the UIKit scene-lifecycle
+architecture before another rotation attempt. Software-keyboard exposure remains pending.
 App Store P0 remains gated by the release-profile user-code restriction, third-party open-in-place,
 Blender trademark permission, and GPL distribution review.

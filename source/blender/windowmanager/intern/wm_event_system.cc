@@ -1100,6 +1100,18 @@ static intptr_t wm_operator_register_active_id(const wmWindowManager *wm)
 
 bool WM_operator_poll(bContext *C, wmOperatorType *ot)
 {
+#ifdef WITH_IOS_APP_STORE
+  if (STREQ(ot->idname, "CONSOLE_OT_execute") || STREQ(ot->idname, "SCRIPT_OT_python_file_run") ||
+      STREQ(ot->idname, "TEXT_OT_run_script") || STREQ(ot->idname, "SCRIPT_OT_reload") ||
+      STREQ(ot->idname, "PREFERENCES_OT_addon_install") ||
+      STREQ(ot->idname, "PREFERENCES_OT_addon_remove") ||
+      STREQ(ot->idname, "PREFERENCES_OT_app_template_install") ||
+      STRPREFIX(ot->idname, "EXTENSIONS_OT_"))
+  {
+    CTX_wm_operator_poll_msg_set(C, "User-installed code is unavailable in the App Store build");
+    return false;
+  }
+#endif
 
   for (wmOperatorTypeMacro &otmacro : ot->macro) {
     wmOperatorType *ot_macro = WM_operatortype_find(otmacro.idname, false);

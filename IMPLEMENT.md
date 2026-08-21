@@ -15,7 +15,7 @@ No runtime workaround is accepted without a regression test or a reproducible de
 - Complete: universal iPhone+iPad target configuration, iOS dependency closure, final application
   link, install-stage runtime closure, nested signing, and physical-iPhone installation.
 - Complete: the current device `build-for-testing` compiled 4,250 units; the signed staging app
-  passed validation across 55 loadable Mach-O files, and testlab passed 54/54 checks.
+  passed validation across 55 loadable Mach-O files. The current host testlab passed 61/61 checks.
 - Complete: the latest signed arm64 staging app again passed validation across 55 loadable Mach-O
   files, host-authorized strict/deep code-signing validation, physical installation, and 54/54
   full testlab checks. A sandbox trust failure was isolated from this result.
@@ -47,9 +47,24 @@ No runtime workaround is accepted without a regression test or a reproducible de
 - Previous iPad Simulator baseline: Python 3.13.9, `bpy`, NumPy, and a bundled SVG add-on run after
   all 19 NumPy native modules are converted to signed frameworks. Runtime Extension management
   exits with the documented iOS error instead of attempting a subprocess.
-- Pending: after four attempts, the software-keyboard end-to-end notification remains locked on
-  test probe/dialog exposure; this is not a newly observed app crash. The new iPad Simulator UI
-  cases still need a fresh run.
+- Current iPad Simulator run: 10/10 FTL tests, the viewport UI test, and the Apple modifier-shortcut
+  UI test passed. Smoke, reopen, lifecycle, Python, and bundled add-on checks also passed.
+- Current iPad Simulator Documents probe: the supplied file opened as 1 scene with 343 objects and
+  202 meshes, saved 141,304,005 bytes, exported OBJ 930 bytes, PLY 628 bytes, and STL 684 bytes,
+  produced an 871,147-byte screenshot, and kept autoexec disabled.
+- Current iPad Simulator URL callback: after readiness synchronization, the fresh 97,076-byte
+  fixture opened with autoexec disabled and produced an 826,614-byte screenshot.
+- Complete in the host harness: an exiting old process could overwrite the report after the next
+  launch with a mismatched run. The runner now waits within its timeout for the current run report;
+  RED mutation coverage and the full 61/61 host testlab pass verify the fix. Evidence is under
+  `staging/sim-probes`.
+- Current iPad Simulator render probe: the first run timed out; the next run stopped with Metal
+  `SIGABRT` and `No valid pixelFormats set`. It was not repeated.
+- Pending: the software-keyboard end-to-end notification remains locked after three actual
+  approaches. The physical product crash fix remains valid; this is still a test-exposure gap.
+- Pending: all three Simulator rotation approaches failed: foreground-scene attachment,
+  delegate/connected-scene attachment, and `initWithWindowScene`. The GHOST rotation experiment
+  was rolled back cleanly. A broader SceneDelegate/`UIApplicationSceneManifest` decision remains.
 - App Store P0 blockers: enforce the user-code policy in the release profile, finish or disable
   third-party open-in-place, and resolve Blender trademark and GPL distribution requirements.
 - Known platform debt: UIKit reports that scene lifecycle adoption will become mandatory and that

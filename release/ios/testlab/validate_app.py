@@ -197,13 +197,31 @@ def validate_compiled_resources(app_dir):
 
     if not (app_dir / "Assets.car").is_file():
         raise ValueError("missing compiled asset catalog")
-    for key, label in (
-        ("UILaunchStoryboardName", "launch"),
-        ("UIMainStoryboardFile", "main"),
+    launch_storyboard = info.get("UILaunchStoryboardName")
+    if not isinstance(launch_storyboard, str) or not (
+        app_dir / f"{launch_storyboard}.storyboardc"
+    ).exists():
+        raise ValueError("missing compiled launch storyboard")
+
+    main_storyboard = info.get("UIMainStoryboardFile")
+    if isinstance(main_storyboard, str):
+        if not (app_dir / f"{main_storyboard}.storyboardc").exists():
+            raise ValueError("missing compiled main storyboard")
+        return
+
+    scene_configurations = info.get("UIApplicationSceneManifest", {}).get(
+        "UISceneConfigurations", {}
+    )
+    application_scenes = scene_configurations.get(
+        "UIWindowSceneSessionRoleApplication", []
+    )
+    if not any(
+        isinstance(configuration, dict)
+        and isinstance(configuration.get("UISceneDelegateClassName"), str)
+        and configuration["UISceneDelegateClassName"]
+        for configuration in application_scenes
     ):
-        name = info.get(key)
-        if not isinstance(name, str) or not (app_dir / f"{name}.storyboardc").exists():
-            raise ValueError(f"missing compiled {label} storyboard")
+        raise ValueError("missing app startup configuration")
 
 
 def validate_runtime(app_dir, command_runner=run_command, *, allow_xctest_support=False):

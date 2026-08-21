@@ -17,7 +17,24 @@
   redirect, and a loadable Mach-O executable. RED mutations confirmed each invalid chain is rejected.
 - Passed host-authorized strict and deep code-signing checks. Isolated the sandbox trust failure as
   an environment restriction, not a signed-package defect.
-- Kept the fresh iPad Simulator run and App Store P0 gates pending.
+- Fresh iPad Simulator checks passed 10/10 FTL, 1/1 viewport UI, and 1/1 Apple modifier-shortcut UI.
+  Smoke, reopen, lifecycle, Python, and bundled add-on checks also passed.
+- The fresh Documents probe opened the supplied file as 1 scene with 343 objects and 202 meshes,
+  saved 141,304,005 bytes, exported OBJ 930 bytes, PLY 628 bytes, and STL 684 bytes, produced an
+  871,147-byte screenshot, and kept autoexec disabled.
+- After readiness synchronization, the application URL callback opened a fresh 97,076-byte fixture
+  with autoexec disabled and produced an 826,614-byte screenshot.
+- RED then GREEN: an exiting old process could overwrite a new launch's report with a mismatched
+  run. The runner now waits within the timeout for the current run report. Host testlab passed
+  61/61; evidence is stored under `staging/sim-probes`.
+- The render probe timed out once, then stopped with Metal `SIGABRT` and
+  `No valid pixelFormats set`. It was not repeated.
+- The software-keyboard end-to-end notification remained locked after three actual approaches.
+  The physical product crash fix remains valid; no replacement product regression was claimed.
+- Rotation failed three approaches: foreground-scene attachment, delegate/connected-scene
+  attachment, and `initWithWindowScene`. The GHOST rotation diff was rolled back cleanly.
+- Deferred the broader SceneDelegate/`UIApplicationSceneManifest` decision.
+- Kept the App Store P0 gates pending.
 
 ## 2026-08-12
 

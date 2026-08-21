@@ -30,6 +30,9 @@ class GHOST_WindowIOS;
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView;
 
 @end
+
+UIWindowScene *_Nullable GHOST_IOSActiveWindowScene(void);
+void GHOST_IOSSetSceneWindow(UIWindow *_Nullable window);
 #endif
 
 GHOST_TKey convertKey(int rawCode, uint16_t recvChar, uint16_t /*keyAction*/);

@@ -52,9 +52,11 @@ class MTLFrameBuffer : public FrameBuffer {
   /* Metal Attachment properties. */
   uint colour_attachment_count_;
   MTLAttachment mtl_color_attachments_[GPU_FB_MAX_COLOR_ATTACHMENT];
+  MTLAttachment detached_subpass_attachments_[GPU_FB_MAX_COLOR_ATTACHMENT];
   MTLAttachment mtl_depth_attachment_;
   MTLAttachment mtl_stencil_attachment_;
   bool use_multilayered_rendering_ = false;
+  id<MTLTexture> attachmentless_dummy_texture_ = nil;
 
   /* State. */
 
@@ -259,6 +261,8 @@ class MTLFrameBuffer : public FrameBuffer {
   }
 
  private:
+  id<MTLTexture> ensure_attachmentless_dummy_texture();
+
   /* Clears a render target by force-opening a render pass. */
   void force_clear();
 

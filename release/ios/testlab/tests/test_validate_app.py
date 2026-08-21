@@ -97,6 +97,42 @@ class ValidateAppTests(unittest.TestCase):
 
             self.assertEqual(result, {"loadable_machos": 2})
 
+    def test_accepts_scene_delegate_without_main_storyboard(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            info_path = app / "Info.plist"
+            info = plistlib.loads(info_path.read_bytes())
+            info.pop("UIMainStoryboardFile")
+            info["UIApplicationSceneManifest"] = {
+                "UISceneConfigurations": {
+                    "UIWindowSceneSessionRoleApplication": [
+                        {"UISceneDelegateClassName": "IOSSceneDelegate"}
+                    ]
+                }
+            }
+            info_path.write_bytes(plistlib.dumps(info))
+
+            result = validate_app.validate_runtime(
+                app,
+                command_runner=self.command_runner(executable, library),
+            )
+
+            self.assertEqual(result, {"loadable_machos": 2})
+
+    def test_rejects_app_without_main_storyboard_or_scene_delegate(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app, executable, library = self.create_app(Path(temp_dir))
+            info_path = app / "Info.plist"
+            info = plistlib.loads(info_path.read_bytes())
+            info.pop("UIMainStoryboardFile")
+            info_path.write_bytes(plistlib.dumps(info))
+
+            with self.assertRaisesRegex(ValueError, "missing app startup configuration"):
+                validate_app.validate_runtime(
+                    app,
+                    command_runner=self.command_runner(executable, library),
+                )
+
     def test_rejects_missing_app_privacy_manifest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             app, executable, library = self.create_app(Path(temp_dir))

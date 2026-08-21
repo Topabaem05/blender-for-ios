@@ -407,7 +407,7 @@ void WM_init_splash(bContext *C)
 /** Load add-ons & app-templates once on startup. */
 static void wm_init_scripts_extensions_once(bContext *C)
 {
-#ifdef WITH_PYTHON
+#if defined(WITH_PYTHON) && !defined(WITH_IOS_APP_STORE)
   const char *imports[] = {"bpy", nullptr};
   BPY_run_string_eval(C, imports, "bpy.utils.load_scripts_extensions()");
 #else

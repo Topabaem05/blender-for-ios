@@ -7,24 +7,36 @@ import bpy
 
 output_dir = os.path.expanduser("~/Documents/BlenderIOSQA")
 report_path = os.path.join(output_dir, "render-engines-report.json")
+progress_path = os.path.join(output_dir, "render-engines-progress.json")
 run_id = os.environ.get("BLENDER_IOS_QA_RUN_ID", "manual")
+
+
+def write_progress(engine, phase):
+    temporary_path = progress_path + ".tmp"
+    with open(temporary_path, "w", encoding="utf-8") as progress_file:
+        json.dump({"engine": engine, "phase": phase, "run_id": run_id}, progress_file)
+    os.replace(temporary_path, progress_path)
 
 
 def render_engine(scene, engine):
     result = {"status": "failed"}
     try:
+        write_progress(engine, "engine-started")
         scene.render.engine = engine
         if engine == "CYCLES":
             scene.cycles.samples = 1
             scene.cycles.use_denoising = False
             scene.cycles.max_bounces = 1
             scene.cycles.volume_bounces = 0
+        write_progress(engine, "engine-configured")
 
         render_path = os.path.join(output_dir, engine.lower() + ".png")
         scene.render.filepath = render_path
+        write_progress(engine, "render-started")
         assert bpy.ops.render.render(write_still=True) == {"FINISHED"}
         render_bytes = os.path.getsize(render_path)
         assert render_bytes > 0
+        write_progress(engine, "engine-finished")
         result = {"status": "passed", "render_bytes": render_bytes}
     except BaseException:
         result["traceback"] = traceback.format_exc()
@@ -44,6 +56,7 @@ def run():
     )
     try:
         os.makedirs(output_dir, exist_ok=True)
+        write_progress(None, "ready")
         assert scene.camera is not None
         scene.render.resolution_x = 64
         scene.render.resolution_y = 64

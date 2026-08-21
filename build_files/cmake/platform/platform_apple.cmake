@@ -34,6 +34,9 @@ if(WITH_APPLE_CROSSPLATFORM)
   set(WITH_INPUT_NDOF OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_PYTHON_MODULE OFF CACHE BOOL ${NO_PLATFORM_SUPPORT_MSG} FORCE)
   set(WITH_PYTHON_SECURITY ON CACHE BOOL "Disable automatic Python execution on iOS" FORCE)
+  if(WITH_IOS_APP_STORE)
+    add_definitions(-DWITH_IOS_APP_STORE)
+  endif()
   # Disable these modules for now
   set(WITH_PYTHON_INSTALL_ZSTANDARD OFF CACHE BOOL "Disable until iOS build supports SSL" FORCE)
   # Disable Audaspace as it had dependencies on CoreAudio components which do not exist on iOS
@@ -62,7 +65,8 @@ if(WITH_APPLE_CROSSPLATFORM)
         # Remove IPAD arg
         if(NOT CACHE_VAR STREQUAL "APPLE_TARGET_DEVICE" AND
            NOT CACHE_VAR STREQUAL "WITH_CROSSCOMPILED_TOOLS" AND
-           NOT CACHE_VAR STREQUAL "WITH_IOS_TESTLAB")
+           NOT CACHE_VAR STREQUAL "WITH_IOS_TESTLAB" AND
+           NOT CACHE_VAR STREQUAL "WITH_IOS_APP_STORE")
           set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}=${${CACHE_VAR}}")
         else()
           # Disable iPad for tools compilation

@@ -522,12 +522,17 @@ static void rna_userdef_script_autoexec_update(Main * /*bmain*/,
                                                PointerRNA *ptr)
 {
   UserDef *userdef = static_cast<UserDef *>(ptr->data);
+#  ifdef WITH_IOS_APP_STORE
+  userdef->flag |= USER_SCRIPT_AUTOEXEC_DISABLE;
+  G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
+#  else
   if (userdef->flag & USER_SCRIPT_AUTOEXEC_DISABLE) {
     G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
   }
   else {
     G.f |= G_FLAG_SCRIPT_AUTOEXEC;
   }
+#  endif
 
   USERDEF_TAG_DIRTY;
 }

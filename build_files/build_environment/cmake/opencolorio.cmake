@@ -46,6 +46,7 @@ if(WITH_APPLE_CROSSPLATFORM)
     ${OPENCOLORIO_EXTRA_ARGS}
     -DOCIO_BUILD_PYTHON=OFF
     -DOCIO_USE_HEADLESS=ON
+    -Dsse2neon_ROOT=${LIBDIR}/sse2neon
     ${IOSDEP_DEFINES}
   )
 endif()
@@ -118,6 +119,10 @@ add_dependencies(
   external_python
   external_pybind11
 )
+
+if(WITH_APPLE_CROSSPLATFORM)
+  add_dependencies(external_opencolorio external_sse2neon)
+endif()
 
 if(WIN32)
   if(BUILD_MODE STREQUAL Release)

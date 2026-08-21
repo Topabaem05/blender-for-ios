@@ -2466,6 +2466,12 @@ void wm_open_init_load_ui(wmOperator *op, bool use_prefs)
 bool wm_open_init_use_scripts(wmOperator *op, bool use_prefs)
 {
   PropertyRNA *prop = RNA_struct_find_property(op->ptr, "use_scripts");
+#ifdef WITH_IOS_APP_STORE
+  RNA_property_boolean_set(op->ptr, prop, false);
+  G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
+  G.f |= G_FLAG_SCRIPT_OVERRIDE_PREF;
+  return false;
+#else
   bool use_scripts_autoexec_check = false;
   if (!RNA_property_is_set(op->ptr, prop)) {
     /* Use #G_FLAG_SCRIPT_AUTOEXEC rather than the userpref because this means if
@@ -2478,6 +2484,7 @@ bool wm_open_init_use_scripts(wmOperator *op, bool use_prefs)
     use_scripts_autoexec_check = true;
   }
   return use_scripts_autoexec_check;
+#endif
 }
 
 /** \} */

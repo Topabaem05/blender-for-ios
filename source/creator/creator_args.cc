@@ -2936,10 +2936,12 @@ void main_args_setup(bContext *C, bArgs *ba, bool all)
    * the environment used to access data-files, which are be used when initializing
    * sub-systems such as color management. */
   BLI_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
+#  ifndef WITH_IOS_APP_STORE
   BLI_args_add(
       ba, nullptr, "--python-use-system-env", CB(arg_handle_python_use_system_env_set), nullptr);
   BLI_args_add(
       ba, nullptr, "--python-use-user-env", CB(arg_handle_python_use_user_env_set), nullptr);
+#  endif
 
   /* Note that we could add used environment variables too. */
   BLI_args_add(
@@ -2990,11 +2992,13 @@ void main_args_setup(bContext *C, bArgs *ba, bool all)
   BLI_args_add(ba, "-v", "--version", CB(arg_handle_print_version), nullptr);
   BLI_args_add(ba, nullptr, "--log-list-categories", CB(arg_handle_list_clog_cats), nullptr);
 
+#  ifndef WITH_IOS_APP_STORE
   BLI_args_add(ba,
                "-y",
                "--enable-autoexec",
                CB_EX(arg_handle_python_set, enable),
                reinterpret_cast<void *>(true));
+#  endif
   BLI_args_add(ba,
                "-Y",
                "--disable-autoexec",
@@ -3241,12 +3245,14 @@ void main_args_setup(bContext *C, bArgs *ba, bool all)
   BLI_args_add(ba, "-s", "--frame-start", CB(arg_handle_frame_start_set), C);
   BLI_args_add(ba, "-e", "--frame-end", CB(arg_handle_frame_end_set), C);
   BLI_args_add(ba, "-j", "--frame-jump", CB(arg_handle_frame_skip_set), C);
+#  ifndef WITH_IOS_APP_STORE
   BLI_args_add(ba, "-P", "--python", CB(arg_handle_python_file_run), C);
   BLI_args_add(ba, nullptr, "--python-text", CB(arg_handle_python_text_run), C);
   BLI_args_add(ba, nullptr, "--python-expr", CB(arg_handle_python_expr_run), C);
   BLI_args_add(ba, nullptr, "--python-console", CB(arg_handle_python_console_run), C);
   BLI_args_add(ba, nullptr, "--python-exit-code", CB(arg_handle_python_exit_code_set), nullptr);
   BLI_args_add(ba, nullptr, "--addons", CB(arg_handle_addons_set), C);
+#  endif
 
   BLI_args_add(ba, "-o", "--render-output", CB(arg_handle_output_set), C);
   BLI_args_add(ba, "-E", "--engine", CB(arg_handle_engine_set), C);

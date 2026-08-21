@@ -15,7 +15,12 @@ FRAGMENT_SHADER_CREATE_INFO(eevee_deferred_tile_classify)
 
 void main()
 {
-  gbuffer::Header header = gbuffer::Header::from_data(in_gbuffer_header);
+#ifdef EEVEE_DEFERRED_TILE_CLASSIFY_IMAGE_READ
+  uint gbuffer_header = imageLoad(in_gbuffer_header, int3(int2(gl_FragCoord.xy), 0)).r;
+#else
+  uint gbuffer_header = in_gbuffer_header;
+#endif
+  gbuffer::Header header = gbuffer::Header::from_data(gbuffer_header);
   int closure_count = int(header.closure_len());
   int is_transmission = 0;
   if (header.has_transmission()) {

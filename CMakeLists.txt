@@ -256,6 +256,10 @@ option(WITH_BLENDER "Build blender (disable to build only Cycles stand-alone)." 
 mark_as_advanced(WITH_BLENDER)
 
 option(WITH_IOS_TESTLAB "Build the hosted XCTest bundle for Firebase Test Lab" OFF)
+option(WITH_IOS_APP_STORE "Build the restricted iOS App Store profile" OFF)
+if(WITH_IOS_APP_STORE AND NOT WITH_APPLE_CROSSPLATFORM)
+  message(FATAL_ERROR "WITH_IOS_APP_STORE requires an iOS build")
+endif()
 
 if(WIN32)
   option(WITH_BLENDER_THUMBNAILER "\

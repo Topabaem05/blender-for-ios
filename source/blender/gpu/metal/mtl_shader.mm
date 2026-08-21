@@ -23,6 +23,8 @@
 #include <sstream>
 #include <string>
 
+#include <TargetConditionals.h>
+
 #include <cstring>
 
 #include "GPU_platform.hh"
@@ -668,9 +670,30 @@ MTLRenderPipelineStateInstance *MTLShader::bake_current_pipeline_state(
           gpu_texture_format_to_metal(stencil_attachment.texture->format_get()) :
           MTLPixelFormatInvalid;
 
+#if TARGET_OS_SIMULATOR
+  const bool uses_attachmentless_dummy = pipeline_descriptor.num_color_attachments == 0 &&
+                                         pipeline_descriptor.depth_attachment_format ==
+                                             MTLPixelFormatInvalid &&
+                                         pipeline_descriptor.stencil_attachment_format ==
+                                             MTLPixelFormatInvalid;
+  if (uses_attachmentless_dummy) {
+    pipeline_descriptor.color_attachment_format[0] = MTLPixelFormatR8Unorm;
+    pipeline_descriptor.num_color_attachments = 1;
+  }
+#endif
+
   /* Resolve Context Pipeline State (required by PSO). */
+#if TARGET_OS_SIMULATOR
+  pipeline_descriptor.color_write_mask = uses_attachmentless_dummy ?
+                                             MTLColorWriteMaskNone :
+                                             ctx->pipeline_state.color_write_mask;
+  pipeline_descriptor.blending_enabled = uses_attachmentless_dummy ?
+                                             false :
+                                             ctx->pipeline_state.blending_enabled;
+#else
   pipeline_descriptor.color_write_mask = ctx->pipeline_state.color_write_mask;
   pipeline_descriptor.blending_enabled = ctx->pipeline_state.blending_enabled;
+#endif
   pipeline_descriptor.alpha_blend_op = ctx->pipeline_state.alpha_blend_op;
   pipeline_descriptor.rgb_blend_op = ctx->pipeline_state.rgb_blend_op;
   pipeline_descriptor.dest_alpha_blend_factor = ctx->pipeline_state.dest_alpha_blend_factor;

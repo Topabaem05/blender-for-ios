@@ -29,6 +29,8 @@
 #include "gpu_capabilities_private.hh"
 #include "gpu_platform_private.hh"
 
+#include <TargetConditionals.h>
+
 #ifdef WITH_APPLE_CROSSPLATFORM
 #  include <Foundation/Foundation.h>
 #  include <sys/sysctl.h>
@@ -494,6 +496,9 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
 #endif
 
   /** Identify support for tile inputs. */
+#if TARGET_OS_SIMULATOR
+  MTLBackend::capabilities.supports_native_tile_inputs = false;
+#else
   const bool is_tile_based_arch = (GPU_platform_architecture() == GPU_ARCHITECTURE_TBDR);
   if (is_tile_based_arch) {
     MTLBackend::capabilities.supports_native_tile_inputs = true;
@@ -502,6 +507,7 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
     /* NOTE: If emulating tile input reads, we must ensure we also expose position data. */
     MTLBackend::capabilities.supports_native_tile_inputs = false;
   }
+#endif
 
   /* CPU Info */
   MTLBackend::capabilities.num_performance_cores = get_num_performance_cpu_cores(ctx->device);

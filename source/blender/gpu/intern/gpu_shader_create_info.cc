@@ -23,6 +23,10 @@
 #include "gpu_shader_create_info_private.hh"
 #include "gpu_shader_dependency_private.hh"
 
+#ifdef __APPLE__
+#  include <TargetConditionals.h>
+#endif
+
 #undef GPU_SHADER_NAMED_INTERFACE_INFO
 #undef GPU_SHADER_INTERFACE_INFO
 #undef GPU_SHADER_CREATE_INFO
@@ -601,6 +605,16 @@ void gpu_shader_create_info_init()
 #include "glsl_ocio_infos_list.hh"
 #ifdef WITH_OPENSUBDIV
 #  include "glsl_osd_infos_list.hh"
+#endif
+
+#if TARGET_OS_SIMULATOR
+  eevee_deferred_tile_classify.subpass_inputs_.clear();
+  eevee_deferred_tile_classify.image(1,
+                                     gpu::TextureFormat::UINT_32,
+                                     Qualifier::read,
+                                     ImageReadWriteType::uimage2DArray,
+                                     "in_gbuffer_header");
+  eevee_deferred_tile_classify.define("EEVEE_DEFERRED_TILE_CLASSIFY_IMAGE_READ");
 #endif
 
   if (GPU_stencil_clasify_buffer_workaround()) {

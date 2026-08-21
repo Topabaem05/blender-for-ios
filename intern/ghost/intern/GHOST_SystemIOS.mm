@@ -35,8 +35,12 @@
 
 int argc = 0;
 const char **argv = nullptr;
+@class IOSSceneDelegate;
 static NSMutableDictionary<NSString *, NSURL *> *g_open_document_urls = nil;
 static NSMutableSet<NSString *> *g_active_security_scoped_paths = nil;
+static UIWindowScene *g_active_window_scene = nil;
+static IOSSceneDelegate *g_scene_delegate = nil;
+static bool g_blender_started = false;
 
 namespace blender {
 struct bContext;
@@ -59,8 +63,6 @@ int main_ios_callback(int argc, const char **argv);
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  main_ios_callback(argc, argv);
-
   return YES;
 }
 
@@ -74,6 +76,89 @@ int main_ios_callback(int argc, const char **argv);
 }
 
 @end
+
+@interface IOSSceneDelegate : UIResponder <UIWindowSceneDelegate>
+
+@property(strong, nonatomic) UIWindow *window;
+
+@end
+
+@implementation IOSSceneDelegate
+
+- (void)scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+                 options:(UISceneConnectionOptions *)connectionOptions
+{
+  if (![scene isKindOfClass:[UIWindowScene class]]) {
+    return;
+  }
+  g_scene_delegate = self;
+  g_active_window_scene = (UIWindowScene *)scene;
+  if (!g_blender_started) {
+    g_blender_started = true;
+    main_ios_callback(argc, argv);
+  }
+  for (UIOpenURLContext *context in connectionOptions.URLContexts) {
+    GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+    if (system != nullptr) {
+      system->handleOpenDocumentRequest(context.URL);
+    }
+  }
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts
+{
+  GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system == nullptr) {
+    return;
+  }
+  for (UIOpenURLContext *context in URLContexts) {
+    system->handleOpenDocumentRequest(context.URL);
+  }
+}
+
+- (void)sceneDidBecomeActive:(UIScene *)scene
+{
+  g_active_window_scene = (UIWindowScene *)scene;
+  GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system != nullptr) {
+    system->handleApplicationBecomeActiveEvent();
+    if (system->current_active_window_ != nullptr) {
+      system->handleWindowEvent(GHOST_kEventWindowActivate, system->current_active_window_);
+    }
+  }
+}
+
+- (void)sceneWillResignActive:(UIScene *)scene
+{
+  GHOST_SystemIOS *system = static_cast<GHOST_SystemIOS *>(GHOST_ISystem::getSystem());
+  if (system != nullptr && system->current_active_window_ != nullptr) {
+    system->handleWindowEvent(GHOST_kEventWindowDeactivate, system->current_active_window_);
+  }
+}
+
+- (void)sceneDidDisconnect:(UIScene *)scene
+{
+  self.window = nil;
+  if (g_scene_delegate == self) {
+    g_scene_delegate = nil;
+  }
+  if (g_active_window_scene == scene) {
+    g_active_window_scene = nil;
+  }
+}
+
+@end
+
+UIWindowScene *GHOST_IOSActiveWindowScene(void)
+{
+  return g_active_window_scene;
+}
+
+void GHOST_IOSSetSceneWindow(UIWindow *window)
+{
+  g_scene_delegate.window = window;
+}
 
 @implementation GHOST_IOSMetalRenderer
 {
